@@ -2,8 +2,6 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import Employee from './Employee.jsx';
 import EmployeePage from './EmployeePage.jsx';
-import SuperAdmin from './SuperAdmin.jsx';
-import SuperAdminFallback from './SuperAdminFallback.jsx';
 import SimpleEmployee from './SimpleEmployee';
 import ViewRequest from './ViewRequest';
 import ViewApproved from './ViewApproved.jsx';
@@ -31,8 +29,6 @@ try {
 }
 
 // Expose components globally
-window.SuperAdmin = SuperAdmin;
-window.SuperAdminFallback = SuperAdminFallback;
 window.ViewApproved = ViewApproved;
 window.ViewRequest = ViewRequest;
 window.Equipment = Equipment;
@@ -42,8 +38,6 @@ window.RoleManagementPage = RoleManagementPage;
 window.UsersPage = UsersPage;
 
 // Double check components are properly exposed
-console.log('SuperAdmin component:', SuperAdmin);
-console.log('SuperAdminFallback component:', SuperAdminFallback);
 console.log('ViewApproved component:', ViewApproved);
 console.log('ViewRequest component:', ViewRequest);
 console.log('Equipment component:', Equipment);
@@ -51,15 +45,6 @@ console.log('AddStocks component:', AddStocks);
 console.log('EmployeePage component:', EmployeePage);
 
 // Force expose components if they're not properly set
-if (!window.SuperAdmin) {
-  console.warn('SuperAdmin not properly exposed, forcing exposure');
-  window.SuperAdmin = SuperAdmin;
-}
-
-if (!window.SuperAdminFallback) {
-  console.warn('SuperAdminFallback not properly exposed, forcing exposure');
-  window.SuperAdminFallback = SuperAdminFallback;
-}
 
 if (!window.ViewApproved) {
   console.warn('ViewApproved not properly exposed, forcing exposure');
@@ -86,56 +71,13 @@ console.log('Global objects set:', {
   React: window.React,
   ReactDOM: window.ReactDOM,
   'ReactDOM.createRoot': typeof window.ReactDOM.createRoot === 'function',
-  SuperAdmin: window.SuperAdmin,
-  SuperAdminFallback: window.SuperAdminFallback,
-  ViewApproved: window.ViewApproved
+  ViewApproved: window.ViewApproved,
+  ViewRequest: window.ViewRequest
 });
 
 // Import CSS
 import '../css/app.css';
 
-// Initialize SuperAdmin component if on superadmin page
-const superadminRoot = document.getElementById('superadmin-root');
-if (superadminRoot) {
-  // Add a small delay to ensure all resources are loaded
-  setTimeout(() => {
-    try {
-      console.log('Initializing SuperAdmin component');
-      // Make sure SuperAdmin is defined before using it
-      if (typeof SuperAdmin === 'undefined') {
-        console.error('SuperAdmin component is not defined');
-        throw new Error('SuperAdmin component is not defined');
-      }
-      const root = createRoot(superadminRoot);
-      root.render(React.createElement(SuperAdmin));
-      console.log('SuperAdmin component rendered successfully');
-    } catch (error) {
-      console.error('Error rendering SuperAdmin component:', error);
-      // Try to render the fallback component
-      try {
-        console.log('Attempting to render SuperAdminFallback component');
-        // Create a new root since the previous one might be in an error state
-        const fallbackRoot = createRoot(superadminRoot);
-        fallbackRoot.render(React.createElement(SuperAdminFallback));
-        console.log('SuperAdminFallback component rendered successfully');
-      } catch (fallbackError) {
-        console.error('Error rendering SuperAdminFallback component:', fallbackError);
-        // Display error message in the UI if fallback also fails
-        superadminRoot.innerHTML = `
-          <div style="padding: 20px; background-color: #ffebee; border: 2px solid #f44336; border-radius: 5px; margin: 20px; text-align: center;">
-            <h2 style="color: #2563EB; font-size: 24px; margin-bottom: 16px;">Super Admin Dashboard</h2>
-            <p style="color: #4B5563; margin-bottom: 24px;">The dashboard is currently unavailable. Please try again later.</p>
-            <button onclick="window.location.reload()" 
-                    style="background-color: #2563EB; color: white; border: none; padding: 8px 16px; 
-                           border-radius: 4px; cursor: pointer;">
-                Reload Page
-            </button>
-          </div>
-        `;
-      }
-    }
-  }, 100); // Small delay to ensure DOM is ready
-}
 
 // Simple test component for debugging
 const TestComponent = () => {

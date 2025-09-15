@@ -21,6 +21,12 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role_id',
+        'employee_id',
+        'position',
+        'department',
+        'phone',
+        'is_active',
     ];
 
     /**
@@ -43,6 +49,60 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
+    }
+
+    // Relationships
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function requests()
+    {
+        return $this->hasMany(Request::class);
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    public function approvedRequests()
+    {
+        return $this->hasMany(Request::class, 'approved_by');
+    }
+
+    public function processedTransactions()
+    {
+        return $this->hasMany(Transaction::class, 'processed_by');
+    }
+
+    // Scopes
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeByRole($query, $roleId)
+    {
+        return $query->where('role_id', $roleId);
+    }
+
+    // Accessors & Mutators
+    public function getIsActiveAttribute()
+    {
+        return $this->is_active;
+    }
+
+    public function hasRole($roleName)
+    {
+        return $this->role && $this->role->name === $roleName;
+    }
+
+    public function hasPermission($permission)
+    {
+        return $this->role && $this->role->hasPermission($permission);
     }
 }
