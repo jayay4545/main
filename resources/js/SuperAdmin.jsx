@@ -1,22 +1,35 @@
 import React, { useState } from 'react';
 import { Search, Printer, Eye, Folder, User, Clock, ChevronDown, ChevronUp, FileText, Home, Check, X, Pencil } from 'lucide-react';
+import VerificationModal from './components/VerificationModal';
 
 const SuperAdmin = () => {
   const [activeMenu, setActiveMenu] = useState('Home');
   const [openDropdown, setOpenDropdown] = useState(false); // For Equipment dropdown
   const [openTransactionDropdown, setOpenTransactionDropdown] = useState(false); // For Transaction dropdown
   const [transactionView, setTransactionView] = useState('viewRequest'); // For transaction view switching
+  const [processingRequest, setProcessingRequest] = useState(null); // Track which request is being processed
+  
+  // Modal state
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    type: null, // 'approve' or 'reject'
+    requestData: null,
+    reason: ''
+  });
+
   const [pendingRequests, setPendingRequests] = useState([
-    { id: 1, name: "John Paul Francisco", position: "NOC tier 1", item: "Laptop, Monitor, etc", status: "Pending", approvedBy: "Ms. France" },
-    { id: 2, name: "Kyle Dela Cruz", position: "NOC tier 1", item: "Laptop, Monitor, etc", status: "Pending", approvedBy: "Ms. Jewel" },
-    { id: 3, name: "Rica Alorro", position: "NOC tier 1", item: "Laptop, Monitor, etc", status: "Pending", approvedBy: "Ms. France" },
-    { id: 4, name: "Carlo Divino", position: "NOC tier 1", item: "Laptop, Monitor, etc", status: "Pending", approvedBy: "Ms. France" },
+    { id: 1, name: "John Paul Francisco", position: "NOC tier 1", item: "Dell Laptop + 24\" Monitor", status: "Pending", approvedBy: "Ms. France", requestDate: "2024-01-15" },
+    { id: 2, name: "Kyle Dela Cruz", position: "NOC tier 1", item: "MacBook Pro + Magic Mouse", status: "Pending", approvedBy: "Ms. Jewel", requestDate: "2024-01-16" },
+    { id: 3, name: "Rica Alorro", position: "NOC tier 1", item: "HP Laptop + External Keyboard", status: "Pending", approvedBy: "Ms. France", requestDate: "2024-01-17" },
+    { id: 4, name: "Carlo Divino", position: "NOC tier 1", item: "Lenovo ThinkPad + Webcam", status: "Pending", approvedBy: "Ms. France", requestDate: "2024-01-18" },
+    { id: 5, name: "Maria Santos", position: "Software Developer", item: "Gaming Chair + Standing Desk", status: "Pending", approvedBy: "Mr. Johnson", requestDate: "2024-01-19" },
+    { id: 6, name: "David Kim", position: "UI/UX Designer", item: "Wacom Tablet + 4K Monitor", status: "Pending", approvedBy: "Ms. Smith", requestDate: "2024-01-20" },
+    { id: 7, name: "Sarah Johnson", position: "Project Manager", item: "Noise Cancelling Headphones", status: "Pending", approvedBy: "Mr. Brown", requestDate: "2024-01-21" },
   ]);
   const [approvedRequests, setApprovedRequests] = useState([
-    { id: 1, name: "John Paul Francisco", position: "NOC tier 1", item: "Laptop, Monitor, etc", status: "Approved", approvedBy: "Ms. France" },
-    { id: 2, name: "Kyle Dela Cruz", position: "NOC tier 1", item: "Laptop, Monitor, etc", status: "Approved", approvedBy: "Ms. Jewel" },
-    { id: 3, name: "Rica Alorro", position: "NOC tier 1", item: "Laptop, Monitor, etc", status: "Approved", approvedBy: "Ms. France" },
-    { id: 4, name: "Carlo Divino", position: "NOC tier 1", item: "Laptop, Monitor, etc", status: "Approved", approvedBy: "Ms. France" },
+    { id: 101, name: "Alex Thompson", position: "Senior Developer", item: "Dell XPS 15 + Dual Monitors", status: "Approved", approvedBy: "John F.", approvedAt: "2024-01-10" },
+    { id: 102, name: "Lisa Chen", position: "Data Analyst", item: "MacBook Air + iPad Pro", status: "Approved", approvedBy: "John F.", approvedAt: "2024-01-12" },
+    { id: 103, name: "Michael Rodriguez", position: "DevOps Engineer", item: "Mechanical Keyboard + Mouse", status: "Approved", approvedBy: "John F.", approvedAt: "2024-01-14" },
   ]);
 
   const menuItems = [
@@ -38,60 +51,73 @@ const SuperAdmin = () => {
 
   // Handler functions for approve and reject actions
   const handleApprove = (requestId) => {
-    console.log('Approve button clicked for ID:', requestId);
     const requestToApprove = pendingRequests.find(req => req.id === requestId);
-    console.log('Request to approve:', requestToApprove);
     
     if (requestToApprove) {
-      // Remove from pending requests
-      setPendingRequests(prev => {
-        const filtered = prev.filter(req => req.id !== requestId);
-        console.log('Updated pending requests:', filtered);
-        return filtered;
+      setModalState({
+        isOpen: true,
+        type: 'approve',
+        requestData: requestToApprove,
+        reason: ''
       });
-      
-      // Add to approved requests with updated status and approval info
-      const approvedRequest = {
-        ...requestToApprove,
-        status: "Approved",
-        approvedBy: "John F.", // Current user
-        approvedAt: new Date().toLocaleDateString()
-      };
-      setApprovedRequests(prev => {
-        const updated = [...prev, approvedRequest];
-        console.log('Updated approved requests:', updated);
-        return updated;
-      });
-      
-      // Show success message (you can replace this with a toast notification)
-      alert(`Request from ${requestToApprove.name} has been approved successfully!`);
-    } else {
-      console.log('Request not found for ID:', requestId);
     }
   };
 
   const handleReject = (requestId) => {
-    console.log('Reject button clicked for ID:', requestId);
     const requestToReject = pendingRequests.find(req => req.id === requestId);
-    console.log('Request to reject:', requestToReject);
     
     if (requestToReject) {
-      // Show confirmation dialog
-      const confirmed = window.confirm(`Are you sure you want to reject the request from ${requestToReject.name}?`);
-      if (confirmed) {
-        // Remove from pending requests
-        setPendingRequests(prev => {
-          const filtered = prev.filter(req => req.id !== requestId);
-          console.log('Updated pending requests after rejection:', filtered);
-          return filtered;
-        });
-        
-        // Show success message
-        alert(`Request from ${requestToReject.name} has been rejected.`);
-      }
-    } else {
-      console.log('Request not found for ID:', requestId);
+      setModalState({
+        isOpen: true,
+        type: 'reject',
+        requestData: requestToReject,
+        reason: ''
+      });
     }
+  };
+
+  // Modal handlers
+  const handleModalClose = () => {
+    setModalState({
+      isOpen: false,
+      type: null,
+      requestData: null,
+      reason: ''
+    });
+  };
+
+  const handleModalConfirm = () => {
+    const { type, requestData } = modalState;
+    
+    if (type === 'approve') {
+      // Remove from pending requests
+      setPendingRequests(prev => prev.filter(req => req.id !== requestData.id));
+      
+      // Add to approved requests
+      const approvedRequest = {
+        ...requestData,
+        status: "Approved",
+        approvedBy: "John F.",
+        approvedAt: new Date().toLocaleDateString()
+      };
+      
+      setApprovedRequests(prev => [...prev, approvedRequest]);
+      
+      // Show success message
+      alert(`Request from ${requestData.name} has been approved successfully! You can now view it in the "View Approved" section.`);
+    } else if (type === 'reject') {
+      // Remove from pending requests
+      setPendingRequests(prev => prev.filter(req => req.id !== requestData.id));
+      
+      // Show success message
+      alert(`Request from ${requestData.name} has been rejected.`);
+    }
+    
+    handleModalClose();
+  };
+
+  const handleReasonChange = (reason) => {
+    setModalState(prev => ({ ...prev, reason }));
   };
 
   const currentHolders = [
@@ -108,6 +134,7 @@ const SuperAdmin = () => {
     { id: 4, name: "Carlo Divino", position: "NOC tier 1", item: "Laptop, Monitor, etc", endDate: "18/08/25", status: "Returned" },
   ];
 
+  
   return (
     <div className="min-h-screen bg-white-100 flex">
       {/* Sidebar Wrapper */}
@@ -300,6 +327,7 @@ const SuperAdmin = () => {
 
         {/* Main Content */}
         <div className="flex-1 p-6 -ml-6 pl-12">
+          
           {/* Dashboard Title */}
           <h2 className="text-4xl font-bold text-blue-600">Transaction</h2>
           <h3 className="text-base font-semibold text-gray-700 mt-3 tracking-wide">QUICK ACCESS</h3>
@@ -314,9 +342,9 @@ const SuperAdmin = () => {
               </div>
             </div>
             <div className="bg-gray-100 rounded-2xl p-6 shadow flex flex-col">
-              <h4 className="text-sm font-semibold text-gray-600">Current holder</h4>
+              <h4 className="text-sm font-semibold text-gray-600">Approved Requests</h4>
               <div className="mt-4 flex items-center justify-between">
-                <p className="text-4xl font-bold text-gray-900">22</p>
+                <p className="text-4xl font-bold text-gray-900">{approvedRequests.length}</p>
                 <div className="w-10 h-10 rounded-full bg-gray-300"></div>
               </div>
             </div>
@@ -421,33 +449,6 @@ const SuperAdmin = () => {
             <>
               <h3 className="mt-10 text-3xl font-semibold text-gray-700">View Request</h3>
               
-              {/* Test buttons for debugging */}
-              <div className="mt-4 mb-4 p-4 bg-yellow-100 rounded-lg">
-                <p className="text-sm text-gray-600 mb-2">Debug Test Buttons:</p>
-                <button 
-                  onClick={() => {
-                    console.log('Test approve clicked');
-                    if (pendingRequests.length > 0) {
-                      handleApprove(pendingRequests[0].id);
-                    }
-                  }}
-                  className="px-4 py-2 bg-green-500 text-white rounded mr-2"
-                >
-                  Test Approve First Request
-                </button>
-                <button 
-                  onClick={() => {
-                    console.log('Test reject clicked');
-                    if (pendingRequests.length > 0) {
-                      handleReject(pendingRequests[0].id);
-                    }
-                  }}
-                  className="px-4 py-2 bg-red-500 text-white rounded"
-                >
-                  Test Reject First Request
-                </button>
-                <p className="text-xs text-gray-500 mt-2">Pending requests count: {pendingRequests.length}</p>
-              </div>
               
               <div className="mt-4 bg-white rounded-xl shadow p-6">
                 <table className="w-full text-sm text-left">
@@ -455,6 +456,7 @@ const SuperAdmin = () => {
                     <tr className="border-b text-gray-600">
                       <th className="pb-2">Name</th>
                       <th className="pb-2">Item</th>
+                      <th className="pb-2">Request Date</th>
                       <th className="pb-2 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -466,29 +468,20 @@ const SuperAdmin = () => {
                           <div className="text-gray-500 text-xs">{req.position}</div>
                         </td>
                         <td className="py-4 text-gray-700">{req.item}</td>
+                        <td className="py-4 text-gray-600 text-sm">{req.requestDate}</td>
                         <td className="py-4">
                           <div className="flex items-center justify-end space-x-3">
                             <button 
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                console.log('Approve button clicked for request:', req);
-                                handleApprove(req.id);
-                              }}
-                              className="h-10 w-10 flex items-center justify-center rounded-lg bg-green-500/10 text-green-600 hover:bg-green-500/20 transition-colors border border-green-200 hover:border-green-300 cursor-pointer"
+                              onClick={() => handleApprove(req.id)}
+                              className="h-10 w-10 flex items-center justify-center rounded-lg bg-green-500/10 text-green-600 hover:bg-green-500/20 border border-green-200 hover:border-green-300 cursor-pointer"
                               title="Approve Request"
                               type="button"
                             >
                               <Check className="h-5 w-5" />
                             </button>
                             <button 
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                console.log('Reject button clicked for request:', req);
-                                handleReject(req.id);
-                              }}
-                              className="h-10 w-10 flex items-center justify-center rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors border border-red-200 hover:border-red-300 cursor-pointer"
+                              onClick={() => handleReject(req.id)}
+                              className="h-10 w-10 flex items-center justify-center rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500/20 border border-red-200 hover:border-red-300 cursor-pointer"
                               title="Reject Request"
                               type="button"
                             >
@@ -518,6 +511,7 @@ const SuperAdmin = () => {
                       <th className="pb-2">Item</th>
                       <th className="pb-2">Status</th>
                       <th className="pb-2">Approved by</th>
+                      <th className="pb-2">Approved Date</th>
                       <th className="pb-2 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -531,6 +525,7 @@ const SuperAdmin = () => {
                         <td className="py-4 text-gray-700">{req.item}</td>
                         <td className="py-4 text-green-600">{req.status}</td>
                         <td className="py-4 text-gray-700">{req.approvedBy}</td>
+                        <td className="py-4 text-gray-600 text-sm">{req.approvedAt}</td>
                         <td className="py-4">
                           <div className="flex items-center justify-end space-x-2">
                             <Printer className="h-5 w-5 text-gray-600" />
@@ -626,6 +621,25 @@ const SuperAdmin = () => {
           )}
         </div>
       </div>
+      
+      {/* Verification Modal */}
+      <VerificationModal
+        isOpen={modalState.isOpen}
+        onClose={handleModalClose}
+        onConfirm={handleModalConfirm}
+        type={modalState.type}
+        requestData={modalState.requestData}
+        title={modalState.type === 'approve' ? 'Approve Request' : 'Reject Request'}
+        message={modalState.type === 'approve' 
+          ? 'Are you sure you want to approve this request? This will move it to the approved list.'
+          : 'Are you sure you want to reject this request? This action cannot be undone.'
+        }
+        confirmText={modalState.type === 'approve' ? 'Approve Request' : 'Reject Request'}
+        cancelText="Cancel"
+        showReasonInput={modalState.type === 'reject'}
+        reason={modalState.reason}
+        onReasonChange={handleReasonChange}
+      />
     </div>
   );
 };

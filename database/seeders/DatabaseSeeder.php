@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             EquipmentCategorySeeder::class,
             UserSeeder::class,
+            EquipmentSeeder::class,
+            RequestsSeeder::class,
         ]);
 
         // Seed transaction data
