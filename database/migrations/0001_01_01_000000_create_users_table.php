@@ -42,8 +42,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
+        // Drop dependent tables first to avoid foreign key constraint errors
+        if (Schema::hasTable('transactions')) {
+            Schema::dropIfExists('transactions');
+        }
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
     }
 };

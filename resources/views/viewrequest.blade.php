@@ -6,6 +6,7 @@
     <title>iREPLY - View Request</title>
     @viteReactRefresh
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script>window.APP_BASE_URL = "{{ url('/') }}";</script>
 </head>
 <body class="antialiased">
     <div id="viewrequest-root"></div>
