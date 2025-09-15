@@ -171,4 +171,142 @@ class EmployeeController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Store a new employee
+     */
+    public function store(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'position' => 'required|string|max:255',
+                'department' => 'nullable|string|max:255',
+                'email' => 'nullable|email|unique:employees,email',
+                'phone' => 'nullable|string|max:20',
+            ]);
+
+            $validatedData['status'] = 'active';
+            $validatedData['created_at'] = now();
+            $validatedData['updated_at'] = now();
+
+            $employeeId = DB::table('employees')->insertGetId($validatedData);
+
+            $employee = DB::table('employees')->where('id', $employeeId)->first();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Employee created successfully',
+                'data' => $employee
+            ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error creating employee: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update an employee
+     */
+    public function update(Request $request, $id)
+    {
+        try {
+            $employee = DB::table('employees')->where('id', $id)->first();
+            
+            if (!$employee) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Employee not found'
+                ], 404);
+            }
+
+            $validatedData = $request->validate([
+                'first_name' => 'sometimes|required|string|max:255',
+                'last_name' => 'sometimes|required|string|max:255',
+                'position' => 'sometimes|required|string|max:255',
+                'department' => 'nullable|string|max:255',
+                'email' => 'nullable|email|unique:employees,email,' . $id,
+                'phone' => 'nullable|string|max:20',
+                'status' => 'sometimes|in:active,inactive',
+            ]);
+
+            $validatedData['updated_at'] = now();
+
+            DB::table('employees')->where('id', $id)->update($validatedData);
+
+            $updatedEmployee = DB::table('employees')->where('id', $id)->first();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Employee updated successfully',
+                'data' => $updatedEmployee
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating employee: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete an employee
+     */
+    public function destroy($id)
+    {
+        try {
+            $employee = DB::table('employees')->where('id', $id)->first();
+            
+            if (!$employee) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Employee not found'
+                ], 404);
+            }
+
+            // Check if employee has active transactions
+            $activeTransactions = DB::table('transactions')
+                ->where('employee_id', $id)
+                ->where('status', 'released')
+                ->count();
+
+            if ($activeTransactions > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete employee with active equipment assignments'
+                ], 400);
+            }
+
+            // Soft delete by updating status
+            DB::table('employees')->where('id', $id)->update([
+                'status' => 'inactive',
+                'updated_at' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Employee deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error deleting employee: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

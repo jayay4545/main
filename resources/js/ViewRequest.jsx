@@ -13,6 +13,7 @@ const fetchJson = async (url) => {
 import React, { useState, useEffect } from 'react';
 import { Search, Printer, Check, X, ChevronDown, Eye, Pencil } from 'lucide-react';
 import HomeSidebar from './HomeSidebar';
+import VerificationModal from './components/VerificationModal';
 
 const ViewRequest = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -31,7 +32,7 @@ const ViewRequest = () => {
   const [verifyReturns, setVerifyReturns] = useState([]);
 
   // API Base URL built from server-injected base path for reliable routing
-  const API_BASE = (window.APP_BASE_URL || window.location.origin).replace(/\/$/, '') + '/api';
+  const API_BASE_URL = (window.APP_BASE_URL || window.location.origin).replace(/\/$/, '') + '/api';
 
   useEffect(() => {
     fetchAllData();
@@ -45,7 +46,7 @@ const ViewRequest = () => {
       
       // Fetch dashboard metrics
       console.log('📊 Fetching dashboard metrics...');
-      const dashboardRes = await fetch(`${API_BASE}/transactions/dashboard`);
+      const dashboardRes = await fetch(`${API_BASE_URL}/transactions/dashboard`);
       console.log('Dashboard response status:', dashboardRes.status);
       const dashboardData = await dashboardRes.json();
       console.log('Dashboard data:', dashboardData);
@@ -58,7 +59,7 @@ const ViewRequest = () => {
 
       // Fetch pending requests
       console.log('📋 Fetching pending requests...');
-      const requestsRes = await fetch(`${API_BASE}/employees/pending-requests`);
+      const requestsRes = await fetch(`${API_BASE_URL}/employees/pending-requests`);
       console.log('Requests response status:', requestsRes.status);
       const requestsData = await requestsRes.json();
       console.log('Requests data:', requestsData);
@@ -71,7 +72,7 @@ const ViewRequest = () => {
 
       // Fetch current holders
       console.log('👥 Fetching current holders...');
-      const holdersRes = await fetch(`${API_BASE}/employees/current-holders`);
+      const holdersRes = await fetch(`${API_BASE_URL}/employees/current-holders`);
       console.log('Holders response status:', holdersRes.status);
       const holdersData = await holdersRes.json();
       console.log('Holders data:', holdersData);
@@ -84,7 +85,7 @@ const ViewRequest = () => {
 
       // Fetch verify returns
       console.log('🔄 Fetching verify returns...');
-      const returnsRes = await fetch(`${API_BASE}/employees/verify-returns`);
+      const returnsRes = await fetch(`${API_BASE_URL}/employees/verify-returns`);
       console.log('Returns response status:', returnsRes.status);
       const returnsData = await returnsRes.json();
       console.log('Returns data:', returnsData);
@@ -407,5 +408,3 @@ const ViewRequest = () => {
 };
 
 export default ViewRequest;
-
-

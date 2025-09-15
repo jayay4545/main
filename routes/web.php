@@ -24,8 +24,7 @@ Route::get('/viewrequest', function () {
     return view('viewrequest'); // loads resources/views/viewrequest.blade.php
 })->name('viewrequest');
 
-Route::get('/superadmin', 'App\Http\Controllers\SuperAdminController@index')->name('superadmin');
-
+ 
 Route::post('/login', function () {
     // Get credentials from request
     $email = request('email');
@@ -33,13 +32,13 @@ Route::post('/login', function () {
     
     // Check if superadmin credentials
     if ($email === 'superadmin@ireply.com' && $password === 'admin123') {
-        // Redirect superadmin to admin dashboard (Home.jsx)
+        // Redirect superadmin to dashboard
         return redirect()->route('dashboard');
     }
     
     // Check if admin credentials
     if ($email === 'admin@ireply.com' && $password === 'admin123') {
-        // Redirect to admin dashboard (Home.jsx)
+        // Redirect to dashboard
         return redirect()->route('dashboard');
     }
     
