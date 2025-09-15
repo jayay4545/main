@@ -3,6 +3,7 @@ import { Search, Printer, Check, X, ChevronDown, Eye, Pencil } from 'lucide-reac
 import Taskbar from './components/Taskbar.jsx';
 import HomeSidebar from './HomeSidebar';
 import VerificationModal from './components/VerificationModal';
+import SimpleConfirmModal from './components/SimpleConfirmModal.jsx';
 import SuccessModal from './components/SuccessModal';
 
 const ViewRequest = () => {
@@ -38,6 +39,13 @@ const ViewRequest = () => {
     requestData: null
   });
 
+  // Simple confirm modal state for check/X buttons
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    mode: null, // 'approve' | 'delete'
+    requestId: null
+  });
+
   const handleSelect = (next) => {
     setView(next);
     setIsMenuOpen(false);
@@ -55,6 +63,18 @@ const ViewRequest = () => {
         reason: ''
       });
     }
+  };
+
+  // Row click opens the detailed approval modal
+  const handleRowClick = (requestId) => {
+    const req = pendingRequests.find(r => r.id === requestId);
+    if (!req) return;
+    setModalState({
+      isOpen: true,
+      type: 'approve',
+      requestData: req,
+      reason: ''
+    });
   };
 
   const handleReject = (requestId) => {
@@ -97,28 +117,15 @@ const ViewRequest = () => {
       
       setApprovedRequests(prev => [...prev, approvedRequest]);
       
-      // Show success modal
-      setSuccessModal({
-        isOpen: true,
-        type: 'approve',
-        requestData: {
-          ...requestData,
-          requestDate: requestData.requestDate
-        }
-      });
+      // Redirect to dedicated View Approved page
+      if (typeof window !== 'undefined') {
+        window.location.href = '/viewapproved';
+      }
     } else if (type === 'reject') {
       // Remove from pending requests
       setPendingRequests(prev => prev.filter(req => req.id !== requestData.id));
       
-      // Show success modal
-      setSuccessModal({
-        isOpen: true,
-        type: 'reject',
-        requestData: {
-          ...requestData,
-          requestDate: requestData.requestDate
-        }
-      });
+      // Optionally keep a simple feedback (no redirect)
     }
     
     handleModalClose();
@@ -190,7 +197,6 @@ const ViewRequest = () => {
             {isMenuOpen && (
               <div className="absolute z-10 mt-2 w-44 bg-white rounded-md shadow border border-gray-200">
                 <button onClick={() => handleSelect('viewRequest')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">View Request</button>
-                <button onClick={() => handleSelect('viewApproved')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">View Approved</button>
                 <button onClick={() => handleSelect('currentHolder')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Current holder</button>
                 <button onClick={() => handleSelect('verifyReturn')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Verify return</button>
               </div>
@@ -213,7 +219,11 @@ const ViewRequest = () => {
                 </thead>
                 <tbody>
                   {pendingRequests.map((req) => (
-                    <tr key={req.id} className="border-b last:border-0">
+                    <tr
+                      key={req.id}
+                      onClick={() => handleRowClick(req.id)}
+                      className="border-b last:border-0 cursor-pointer hover:bg-gray-50"
+                    >
                       <td className="py-4">
                         <div className="font-medium text-gray-900">{req.name}</div>
                         <div className="text-gray-500 text-xs">{req.position}</div>
@@ -223,7 +233,10 @@ const ViewRequest = () => {
                       <td className="py-4">
                         <div className="flex items-center justify-end space-x-3">
                           <button 
-                            onClick={() => handleApprove(req.id)}
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              setConfirmModal({ isOpen: true, mode: 'approve', requestId: req.id });
+                            }}
                             className="h-10 w-10 flex items-center justify-center rounded-lg bg-green-500/10 text-green-600 hover:bg-green-500/20 border border-green-200 hover:border-green-300 cursor-pointer"
                             title="Approve Request"
                             type="button"
@@ -231,7 +244,10 @@ const ViewRequest = () => {
                             <Check className="h-5 w-5" />
                           </button>
                           <button 
-                            onClick={() => handleReject(req.id)}
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              handleReject(req.id);
+                            }}
                             className="h-10 w-10 flex items-center justify-center rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500/20 border border-red-200 hover:border-red-300 cursor-pointer"
                             title="Reject Request"
                             type="button"
@@ -249,48 +265,7 @@ const ViewRequest = () => {
           </>
         )}
 
-        {view === 'viewApproved' && (
-          <>
-            <h3 className="mt-10 text-3xl font-semibold text-gray-700">View Approved</h3>
-            <div className="mt-4 bg-white rounded-xl shadow p-6">
-              <table className="w-full text-sm text-left">
-                <thead>
-                  <tr className="border-b text-gray-600">
-                    <th className="pb-2">Name</th>
-                    <th className="pb-2">Position</th>
-                    <th className="pb-2">Item</th>
-                    <th className="pb-2">Status</th>
-                    <th className="pb-2">Approved by</th>
-                    <th className="pb-2">Approved Date</th>
-                    <th className="pb-2 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {approvedRequests.map((req) => (
-                    <tr key={req.id} className="border-b last:border-0">
-                      <td className="py-4">
-                        <div className="font-medium text-gray-900">{req.name}</div>
-                        <div className="text-gray-500 text-xs">{req.position}</div>
-                      </td>
-                      <td className="py-4 text-gray-700">{req.item}</td>
-                      <td className="py-4 text-green-600">{req.status}</td>
-                      <td className="py-4 text-gray-700">{req.approvedBy}</td>
-                      <td className="py-4 text-gray-600 text-sm">{req.approvedAt}</td>
-                      <td className="py-4">
-                        <div className="flex items-center justify-end space-x-2">
-                          <Printer className="h-5 w-5 text-gray-600" />
-                          <button className="px-3 py-1 bg-green-500 text-white rounded-full text-xs">
-                            Release
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+        
 
         {view === 'currentHolder' && (
           <>
@@ -393,6 +368,38 @@ const ViewRequest = () => {
         type={successModal.type}
         requestData={successModal.requestData}
         action={successModal.type === 'approve' ? 'approved' : 'rejected'}
+      />
+
+      {/* Simple Confirm Modal for check/X */}
+      <SimpleConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, mode: null, requestId: null })}
+        onConfirm={() => {
+          if (confirmModal.mode === 'approve') {
+            const requestToApprove = pendingRequests.find(req => req.id === confirmModal.requestId);
+            if (requestToApprove) {
+              setPendingRequests(prev => prev.filter(req => req.id !== confirmModal.requestId));
+              const approvedRequest = {
+                ...requestToApprove,
+                status: 'Approved',
+                approvedBy: 'John F.',
+                approvedAt: new Date().toLocaleDateString()
+              };
+              setApprovedRequests(prev => [...prev, approvedRequest]);
+            }
+          } else if (confirmModal.mode === 'delete') {
+            // For delete, open the detailed reject modal to capture optional reason
+            const requestToReject = pendingRequests.find(req => req.id === confirmModal.requestId);
+            if (requestToReject) {
+              setModalState({ isOpen: true, type: 'reject', requestData: requestToReject, reason: '' });
+            }
+          }
+          setConfirmModal({ isOpen: false, mode: null, requestId: null });
+        }}
+        title={confirmModal.mode === 'approve' ? 'Approving Request' : 'Deleting Request'}
+        message={'Are you sure you want to continue?'}
+        confirmText={confirmModal.mode === 'approve' ? 'Approve' : 'Delete'}
+        confirmTone={confirmModal.mode === 'approve' ? 'primary' : 'danger'}
       />
     </div>
   );
