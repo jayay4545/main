@@ -5,6 +5,7 @@ import { requestService, equipmentService } from '../services/api';
 import { usePagination, useRequest } from '../hooks/useApi';
 import Loading from './Loading';
 import NotificationContainer from './NotificationContainer';
+import SuccessModal from './SuccessModal';
 
 const SuperAdminUpdated = () => {
   const { user, notifications, removeNotification, addNotification } = useApp();
@@ -13,6 +14,13 @@ const SuperAdminUpdated = () => {
   const [openTransactionDropdown, setOpenTransactionDropdown] = useState(false);
   const [transactionView, setTransactionView] = useState('viewRequest');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Success modal state
+  const [successModal, setSuccessModal] = useState({
+    isOpen: false,
+    type: null, // 'approve' or 'reject'
+    requestData: null
+  });
 
   // API hooks
   const { execute: approveRequest } = useRequest();
@@ -38,11 +46,21 @@ const SuperAdminUpdated = () => {
   // Handler functions for approve and reject actions
   const handleApprove = async (requestId) => {
     try {
+      const requestData = currentData.data.find(req => req.id === requestId);
       await approveRequest(requestService.approve, requestId, {});
-      addNotification({
-        type: 'success',
-        message: 'Request approved successfully!',
+      
+      // Show success modal
+      setSuccessModal({
+        isOpen: true,
+        type: 'approve',
+        requestData: {
+          name: requestData?.user?.name || 'Unknown User',
+          position: requestData?.user?.position || 'Unknown Position',
+          item: requestData?.equipment?.name || 'Unknown Equipment',
+          requestDate: new Date(requestData?.created_at).toLocaleDateString()
+        }
       });
+      
       pendingRequests.refresh();
       approvedRequests.refresh();
     } catch (error) {
@@ -58,11 +76,21 @@ const SuperAdminUpdated = () => {
     if (!reason) return;
 
     try {
+      const requestData = currentData.data.find(req => req.id === requestId);
       await rejectRequest(requestService.reject, requestId, { rejection_reason: reason });
-      addNotification({
-        type: 'success',
-        message: 'Request rejected successfully!',
+      
+      // Show success modal
+      setSuccessModal({
+        isOpen: true,
+        type: 'reject',
+        requestData: {
+          name: requestData?.user?.name || 'Unknown User',
+          position: requestData?.user?.position || 'Unknown Position',
+          item: requestData?.equipment?.name || 'Unknown Equipment',
+          requestDate: new Date(requestData?.created_at).toLocaleDateString()
+        }
       });
+      
       pendingRequests.refresh();
     } catch (error) {
       addNotification({
@@ -95,6 +123,15 @@ const SuperAdminUpdated = () => {
   };
 
   const currentData = getCurrentData();
+
+  // Success modal handlers
+  const handleSuccessModalClose = () => {
+    setSuccessModal({
+      isOpen: false,
+      type: null,
+      requestData: null
+    });
+  };
 
   return (
     <div className="min-h-screen bg-white-100 flex">
@@ -500,6 +537,15 @@ const SuperAdminUpdated = () => {
           )}
         </div>
       </div>
+
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={successModal.isOpen}
+        onClose={handleSuccessModalClose}
+        type={successModal.type}
+        requestData={successModal.requestData}
+        action={successModal.type === 'approve' ? 'approved' : 'rejected'}
+      />
     </div>
   );
 };
