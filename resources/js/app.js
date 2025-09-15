@@ -10,6 +10,7 @@ import Equipment from './Equipment.jsx';
 import AddStocks from './AddStocks.jsx';
 import RoleManagementPage from './RoleManagementPage.jsx';
 import UsersPage from './UsersPage.jsx';
+import ControlPanel from './ControlPanel.jsx';
 
 // Make React, ReactDOM, and components available globally for fallback mechanisms
 window.React = React;
@@ -36,6 +37,7 @@ window.AddStocks = AddStocks;
 window.EmployeePage = EmployeePage;
 window.RoleManagementPage = RoleManagementPage;
 window.UsersPage = UsersPage;
+window.ControlPanel = ControlPanel;
 
 // Double check components are properly exposed
 console.log('ViewApproved component:', ViewApproved);
@@ -237,6 +239,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h2 style="color: #d32f2f;">Users Failed to Load</h2>
                 <p>There was an error loading the Users component. Please try reloading the page.</p>
                 <p>Error: ${error.message}</p>
+                <button onclick="window.location.reload()" style="padding: 10px 20px; background-color: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+                  Reload Page
+                </button>
+              </div>
+            `;
+        }
+    }
+    
+    // Check for control-panel-root (for control panel page)
+    const controlPanelContainer = document.getElementById('control-panel-root');
+    console.log('control-panel-root element found:', controlPanelContainer);
+    
+    if (controlPanelContainer) {
+        try {
+            console.log('Initializing ControlPanel component');
+            const root = createRoot(controlPanelContainer);
+            root.render(React.createElement(ControlPanel));
+            console.log('ControlPanel component rendered successfully');
+        } catch (error) {
+            console.error('Error rendering ControlPanel component:', error);
+            // Display error message in the UI
+            controlPanelContainer.innerHTML = `
+              <div style="padding: 20px; background-color: #ffebee; border: 2px solid #f44336; border-radius: 5px; margin: 20px; text-align: center;">
+                <h2 style="color: #d32f2f;">Control Panel Failed to Load</h2>
+                <p>There was an error loading the Control Panel component. Please try reloading the page.</p>
                 <button onclick="window.location.reload()" style="padding: 10px 20px; background-color: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
                   Reload Page
                 </button>

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Plus, Edit, Trash2, MoreVertical, Save, ArrowRight } from "lucide-react";
 import HomeSidebar from "./HomeSidebar";
+import Taskbar from "./components/Taskbar.jsx";
 
 const RoleManagementPage = () => {
   const [admins, setAdmins] = useState([
@@ -162,7 +163,8 @@ const RoleManagementPage = () => {
       <HomeSidebar />
       
       {/* Main Content */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex flex-col">
+        <Taskbar title="John F." />
         {/* Left Panel - Admin Lists */}
         <div className="w-2/3 p-8">
           <div className="mb-6">

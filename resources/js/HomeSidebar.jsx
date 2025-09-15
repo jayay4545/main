@@ -10,9 +10,15 @@ import {
   Clock,
 } from "lucide-react";
 
-const HomeSidebar = () => {
+const HomeSidebar = ({ onSelect }) => {
   const [openTransaction, setOpenTransaction] = useState(true);
   const [openEquipment, setOpenEquipment] = useState(true);
+
+  const isActive = (path) => typeof window !== 'undefined' && window.location && window.location.pathname === path;
+  const linkClass = (path) =>
+    `flex items-center w-full space-x-3 px-4 py-2 rounded-r-full transition-colors ${
+      isActive(path) ? 'bg-white text-blue-600' : 'hover:bg-white hover:text-blue-600'
+    }`;
 
   return (
     <div className="flex flex-col">
@@ -28,11 +34,11 @@ const HomeSidebar = () => {
       {/* Sidebar */}
       <aside className="w-57 bg-[#2262C6] text-white flex flex-col h-screen overflow-hidden rounded-tr-[72px]">
          {/* Navigation */}
-        <nav className="flex-1 min-h-0 px-4 py-6 mt-10 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-blue-200">
+        <nav className="flex-1 min-h-0 px-4 py-6 mt-5 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-blue-200">
         {/* Home */}
         <a
           href="/dashboard"
-          className="flex items-center w-full space-x-3 px-4 py-2 rounded-r-full transition-colors hover:bg-white hover:text-blue-600"
+          className={linkClass('/dashboard')}
         >
           <Eye className="h-5 w-5" />
           <span>Home</span>
@@ -52,7 +58,7 @@ const HomeSidebar = () => {
             <li>
               <a
                 href="/viewrequest"
-                className="block p-2 text-white/90 hover:bg-blue-700 rounded-md"
+                className={`block p-2 rounded-md ${isActive('/viewrequest') ? 'bg-white text-blue-600' : 'text-white/90 hover:bg-white hover:text-blue-600'}`}
               >
                 View Request
               </a>
@@ -60,7 +66,7 @@ const HomeSidebar = () => {
             <li>
               <a
                 href="/viewapproved"
-                className="block p-2 text-white/90 hover:bg-blue-700 rounded-md"
+                className={`block p-2 rounded-md ${isActive('/viewapproved') ? 'bg-white text-blue-600' : 'text-white/90 hover:bg-white hover:text-blue-600'}`}
               >
                 View Approved
               </a>
@@ -82,7 +88,7 @@ const HomeSidebar = () => {
             <li>
               <a
                 href="/equipment"
-                className="block p-2 text-white/90 hover:bg-blue-700 rounded-md"
+                className={`block p-2 rounded-md ${isActive('/equipment') ? 'bg-white text-blue-600' : 'text-white/90 hover:bg-white hover:text-blue-600'}`}
               >
                 Inventory
               </a>
@@ -90,7 +96,7 @@ const HomeSidebar = () => {
             <li>
               <a
                 href="/addstocks"
-                className="block p-2 text-white/90 hover:bg-blue-700 rounded-md"
+                className={`block p-2 rounded-md ${isActive('/addstocks') ? 'bg-white text-blue-600' : 'text-white/90 hover:bg-white hover:text-blue-600'}`}
               >
                 Add Stocks
               </a>
@@ -101,7 +107,7 @@ const HomeSidebar = () => {
         {/* Other Menus */}
         <a
           href="/employee"
-          className="flex items-center w-full space-x-3 px-4 py-2 rounded-r-full transition-colors hover:bg-white hover:text-blue-600"
+          className={linkClass('/employee')}
         >
           <User className="h-5 w-5" />
           <span>Employee</span>
@@ -114,16 +120,19 @@ const HomeSidebar = () => {
 
         <a
           href="/role-management"
-          className="flex items-center w-full space-x-3 px-4 py-2 rounded-r-full transition-colors hover:bg-white hover:text-blue-600"
+          className={linkClass('/role-management')}
         >
           <Users className="h-5 w-5" />
           <span>Role Management</span>
         </a>
 
-        <button className="flex items-center w-full space-x-3 px-4 py-2 rounded-r-full transition-colors hover:bg-white hover:text-blue-600">
+        <a
+          href="/control-panel"
+          className={linkClass('/control-panel')}
+        >
           <Settings className="h-5 w-5" />
           <span>Control Panel</span>
-        </button>
+        </a>
 
         <button className="flex items-center w-full space-x-3 px-4 py-2 rounded-r-full transition-colors hover:bg-white hover:text-blue-600">
           <Clock className="h-5 w-5" />
@@ -132,7 +141,7 @@ const HomeSidebar = () => {
 
         <a
           href="/users"
-          className="flex items-center w-full space-x-3 px-4 py-2 rounded-r-full transition-colors hover:bg-white hover:text-blue-600"
+          className={linkClass('/users')}
         >
           <User className="h-5 w-5" />
           <span>Users</span>

@@ -5,7 +5,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\TransactionController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('welcome'); // show login first
 });
 
 Route::get('/dashboard', function () {
@@ -42,8 +42,8 @@ Route::post('/login', function () {
         return redirect()->route('dashboard');
     }
     
-    // For all other users, redirect to employee page
-    return redirect()->route('employee');
+    // For all other users, redirect to dashboard by default
+    return redirect()->route('dashboard');
 })->name('login');
 
 Route::get('/equipment', function () {
@@ -65,3 +65,7 @@ Route::get('/role-management', function () {
 Route::get('/users', function () {
     return view('users');
 })->name('users');
+
+Route::get('/control-panel', function () {
+    return view('control-panel');
+})->name('control-panel');

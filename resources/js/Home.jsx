@@ -1,53 +1,24 @@
-import React from "react";
+import React, { useState } from "react";
 import HomeSidebar from "./HomeSidebar";
+import Taskbar from "./components/Taskbar.jsx";
 
 const HomePage = () => {
+  const [activeView, setActiveView] = useState("Dashboard");
+
   return (
     <div className="flex h-screen overflow-hidden bg-white">
       {/* Sidebar */}
-      <HomeSidebar />
+      <HomeSidebar onSelect={(label) => setActiveView(label)} />
 
       {/* Main Section */}
       <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="flex items-center justify-between px-10 py-6 bg-white">
-          {/* Search */}
-          <div className="flex-1 max-w-2xl">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search"
-                className="w-full pl-10 pr-4 py-3 rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"
-                />
-              </svg>
-            </div>
-          </div>
+        <Taskbar title="John F." />
 
-          {/* Profile */}
-          <div className="flex items-center space-x-6">
-            <span className="text-gray-700 font-medium">John F.</span>
-            <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-white"> J
-            </div>
-          </div>
-        </header>
-
-        {/* Dashboard Content */}
+        {/* Main Content Area */}
         <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">
           <h2 className="text-4xl font-bold text-blue-600">Dashboard</h2>
 
+            <>
           {/* Stats Cards - Much Smaller Size with Fixed Height */}
       <div className="grid grid-cols-3 gap-9 mt-6">
         <div className="bg-blue-600 text-white rounded-2xl p-3 shadow flex flex-col h-26">
@@ -161,6 +132,7 @@ const HomePage = () => {
             </div>
           </div>
           </div>
+            </>
         </main>
       </div>
     </div>

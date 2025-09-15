@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import HomeSidebar from './HomeSidebar';
-import { Search } from 'lucide-react';
+import Taskbar from './components/Taskbar.jsx';
 
 const items = [
   { id: 1, name: 'LAPTOP', qty: '4/10', img: null },
@@ -34,19 +34,7 @@ const Equipment = () => {
     <div className="h-screen overflow-hidden bg-white flex">
       <HomeSidebar />
       <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="flex items-center justify-between px-10 py-6 bg-white">
-          <div className="flex-1 max-w-2xl">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input type="text" placeholder="Search" className="w-full pl-10 pr-4 py-3 rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-          </div>
-          <div className="flex items-center space-x-6">
-            <span className="text-gray-700 font-medium">John F.</span>
-            <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-white">J</div>
-          </div>
-        </header>
+        <Taskbar title="John F." />
 
         {/* Content */}
         <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">

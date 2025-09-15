@@ -1,6 +1,7 @@
 import React from 'react';
 import HomeSidebar from './HomeSidebar';
-import { Search, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Trash2 } from 'lucide-react';
+import Taskbar from './components/Taskbar.jsx';
 
 const employees = [
   { id: 1, name: 'John Paul Francisco', position: 'NOC tier 1', department: 'VOIP', badge: 'J', color: 'bg-blue-500' },
@@ -28,18 +29,10 @@ const EmployeePage = () => {
     <div className="h-screen overflow-hidden bg-white flex">
       <HomeSidebar />
       <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="flex items-center justify-between px-10 py-6 bg-white">
-          <h1 className="text-2xl font-bold text-blue-600">Employees</h1>
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center bg-gray-100 rounded-full px-4 py-2 w-96">
-              <Search className="h-5 w-5 text-gray-400" />
-              <input className="flex-1 bg-transparent pl-2 outline-none" placeholder="Search" />
-              <div className="w-24 h-8 bg-gray-300 rounded-md" />
-            </div>
-            <button onClick={() => setIsAddOpen(true)} className="px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-600 hover:text-white">Add New</button>
-          </div>
-        </header>
+        <Taskbar title="Employees" />
+        <div className="px-10 pt-4 flex justify-end">
+          <button onClick={() => setIsAddOpen(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Add New</button>
+        </div>
 
         {/* Table */}
         <main className="px-10 pb-10 flex-1 min-h-0 overflow-y-auto">
