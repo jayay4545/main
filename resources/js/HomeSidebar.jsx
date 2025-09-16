@@ -17,24 +17,24 @@ const HomeSidebar = ({ onSelect }) => {
   const isActive = (path) => typeof window !== 'undefined' && window.location && window.location.pathname === path;
   const linkClass = (path) =>
     `flex items-center w-full space-x-3 px-4 py-2 rounded-r-full transition-colors ${
-      isActive(path) ? 'bg-white text-blue-600' : 'hover:bg-white hover:text-blue-600'
+      isActive(path) ? 'bg-white text-[#2262C6]' : 'hover:bg-white hover:text-[#2262C6]'
     }`;
 
   return (
     <div className="flex flex-col">
       {/* Logo */}
-      <div className="flex items-center space-x-3 p-6">
+      <div className="flex items-center space-x-3 p-4">
         <img
           src="/images/Frame_89-removebg-preview.png"
           alt="iREPLY Logo"
-          className="h-12 w-auto"
+          className="h-20 w-50"
         />
       </div>
 
       {/* Sidebar */}
-      <aside className="w-57 bg-[#2262C6] text-white flex flex-col h-screen overflow-hidden rounded-tr-[72px]">
+      <aside className="w-57 bg-gradient-to-b from-[#0064FF] to-[#053786] text-white flex flex-col h-screen overflow-hidden rounded-tr-[72px]">
          {/* Navigation */}
-        <nav className="flex-1 min-h-0 px-4 py-6 mt-5 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-blue-200">
+        <nav className="flex-1 min-h-0 px-4 py-6 mt-5 space-y-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Home */}
         <a
           href="/dashboard"
@@ -58,7 +58,7 @@ const HomeSidebar = ({ onSelect }) => {
             <li>
               <a
                 href="/viewrequest"
-                className={`block p-2 rounded-md ${isActive('/viewrequest') ? 'bg-white text-blue-600' : 'text-white/90 hover:bg-white hover:text-blue-600'}`}
+                className={`block p-2 rounded-md ${isActive('/viewrequest') ? 'bg-white text-[#2262C6]' : 'text-white/90 hover:bg-white hover:text-[#2262C6]'}`}
               >
                 View Request
               </a>
@@ -66,7 +66,7 @@ const HomeSidebar = ({ onSelect }) => {
             <li>
               <a
                 href="/viewapproved"
-                className={`block p-2 rounded-md ${isActive('/viewapproved') ? 'bg-white text-blue-600' : 'text-white/90 hover:bg-white hover:text-blue-600'}`}
+                className={`block p-2 rounded-md ${isActive('/viewapproved') ? 'bg-white text-[#2262C6]' : 'text-white/90 hover:bg-white hover:text-[#2262C6]'}`}
               >
                 View Approved
               </a>
@@ -88,7 +88,7 @@ const HomeSidebar = ({ onSelect }) => {
             <li>
               <a
                 href="/equipment"
-                className={`block p-2 rounded-md ${isActive('/equipment') ? 'bg-white text-blue-600' : 'text-white/90 hover:bg-white hover:text-blue-600'}`}
+                className={`block p-2 rounded-md ${isActive('/equipment') ? 'bg-white text-[#2262C6]' : 'text-white/90 hover:bg-white hover:text-[#2262C6]'}`}
               >
                 Inventory
               </a>
@@ -96,7 +96,7 @@ const HomeSidebar = ({ onSelect }) => {
             <li>
               <a
                 href="/addstocks"
-                className={`block p-2 rounded-md ${isActive('/addstocks') ? 'bg-white text-blue-600' : 'text-white/90 hover:bg-white hover:text-blue-600'}`}
+                className={`block p-2 rounded-md ${isActive('/addstocks') ? 'bg-white text-[#2262C6]' : 'text-white/90 hover:bg-white hover:text-[#2262C6]'}`}
               >
                 Add Stocks
               </a>
