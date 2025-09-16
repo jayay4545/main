@@ -67,6 +67,7 @@ class EmployeeController extends Controller
             $currentHolders = DB::table('transactions')
                 ->join('employees', 'transactions.employee_id', '=', 'employees.id')
                 ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
+                ->leftJoin('equipment_categories', 'equipments.category_id', '=', 'equipment_categories.id')
                 ->where('transactions.status', 'released')
                 ->select(
                     'transactions.id as transaction_id',
@@ -75,12 +76,13 @@ class EmployeeController extends Controller
                     'employees.last_name',
                     'employees.position',
                     'equipments.name as equipment_name',
-                    'equipments.category',
+                    DB::raw('COALESCE(equipment_categories.name, "Uncategorized") as category'),
                     'transactions.request_mode',
                     'transactions.expected_return_date',
                     'transactions.release_date'
                 )
                 ->orderBy('transactions.release_date', 'desc')
+                ->limit(50)
                 ->get();
 
             return response()->json([
@@ -105,20 +107,22 @@ class EmployeeController extends Controller
             $pendingRequests = DB::table('requests')
                 ->join('employees', 'requests.employee_id', '=', 'employees.id')
                 ->join('equipments', 'requests.equipment_id', '=', 'equipments.id')
+                ->leftJoin('equipment_categories', 'equipments.category_id', '=', 'equipment_categories.id')
                 ->where('requests.status', 'pending')
                 ->select(
                     'requests.id as request_id',
-                    'requests.request_number',
+                    'requests.id as request_number',
                     'employees.first_name',
                     'employees.last_name',
                     'employees.position',
                     'equipments.name as equipment_name',
-                    'equipments.category',
+                    DB::raw('COALESCE(equipment_categories.name, "Uncategorized") as category'),
                     'requests.request_mode',
                     'requests.reason',
-                    'requests.requested_date'
+                    'requests.created_at as requested_date'
                 )
-                ->orderBy('requests.requested_date', 'desc')
+                ->orderBy('requests.created_at', 'desc')
+                ->limit(50)
                 ->get();
 
             return response()->json([
@@ -135,6 +139,47 @@ class EmployeeController extends Controller
     }
 
     /**
+     * Get approved requests
+     */
+    public function approvedRequests()
+    {
+        try {
+            $approvedRequests = DB::table('requests')
+                ->join('employees', 'requests.employee_id', '=', 'employees.id')
+                ->join('equipments', 'requests.equipment_id', '=', 'equipments.id')
+                ->leftJoin('equipment_categories', 'equipments.category_id', '=', 'equipment_categories.id')
+                ->where('requests.status', 'approved')
+                ->select(
+                    'requests.id as request_id',
+                    'requests.id as request_number',
+                    'employees.first_name',
+                    'employees.last_name',
+                    'employees.position',
+                    'equipments.name as equipment_name',
+                    DB::raw('COALESCE(equipment_categories.name, "Uncategorized") as category'),
+                    'requests.request_mode',
+                    'requests.reason',
+                    'requests.approved_at',
+                    'requests.approval_notes'
+                )
+                ->orderBy('requests.approved_at', 'desc')
+                ->limit(50)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $approvedRequests,
+                'count' => $approvedRequests->count()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching approved requests: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get employees with returned equipment for verification
      */
     public function verifyReturns()
@@ -143,6 +188,7 @@ class EmployeeController extends Controller
             $verifyReturns = DB::table('transactions')
                 ->join('employees', 'transactions.employee_id', '=', 'employees.id')
                 ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
+                ->leftJoin('equipment_categories', 'equipments.category_id', '=', 'equipment_categories.id')
                 ->where('transactions.status', 'returned')
                 ->select(
                     'transactions.id as transaction_id',
@@ -151,12 +197,13 @@ class EmployeeController extends Controller
                     'employees.last_name',
                     'employees.position',
                     'equipments.name as equipment_name',
-                    'equipments.category',
+                    DB::raw('COALESCE(equipment_categories.name, "Uncategorized") as category'),
                     'transactions.return_date',
                     'transactions.expected_return_date',
                     'transactions.return_condition'
                 )
                 ->orderBy('transactions.return_date', 'desc')
+                ->limit(50)
                 ->get();
 
             return response()->json([

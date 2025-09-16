@@ -6,6 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Models\Request;
 use App\Models\User;
 use App\Models\Equipment;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class RequestsSeeder extends Seeder
@@ -21,17 +22,19 @@ class RequestsSeeder extends Seeder
         })->get();
         
         $equipment = Equipment::all();
+        $employees = DB::table('employees')->get();
         $admins = User::whereIn('role_id', function($query) {
             $query->select('id')->from('roles')->whereIn('name', ['admin', 'super_admin']);
         })->get();
 
-        if ($users->isEmpty() || $equipment->isEmpty()) {
-            echo "⚠️  No users or equipment found. Please run UserSeeder and EquipmentSeeder first.\n";
+        if ($users->isEmpty() || $equipment->isEmpty() || $employees->isEmpty()) {
+            echo "⚠️  Missing users, employees, or equipment. Please seed prerequisites first.\n";
             return;
         }
 
         $requestTypes = ['borrow', 'permanent_assignment', 'maintenance'];
-        $requestModes = ['onsite', 'wfh', 'hybrid'];
+        // Match enum casing in migration: Onsite, W.F.H, Hybrid
+        $requestModes = ['Onsite', 'W.F.H', 'Hybrid'];
         $statuses = ['pending', 'approved', 'rejected', 'cancelled'];
         $reasons = [
             'Need laptop for remote work setup',
@@ -56,6 +59,7 @@ class RequestsSeeder extends Seeder
         // Create pending requests (15 items)
         for ($i = 0; $i < 15; $i++) {
             $user = $users->random();
+            $employeeRec = $employees->random();
             $equipmentItem = $equipment->random();
             $requestType = $requestTypes[array_rand($requestTypes)];
             $requestMode = $requestModes[array_rand($requestModes)];
@@ -68,6 +72,7 @@ class RequestsSeeder extends Seeder
 
             $requests[] = Request::create([
                 'user_id' => $user->id,
+                'employee_id' => $employeeRec->id,
                 'equipment_id' => $equipmentItem->id,
                 'request_type' => $requestType,
                 'request_mode' => $requestMode,
@@ -83,6 +88,7 @@ class RequestsSeeder extends Seeder
         // Create approved requests (20 items)
         for ($i = 0; $i < 20; $i++) {
             $user = $users->random();
+            $employeeRec = $employees->random();
             $equipmentItem = $equipment->random();
             $requestType = $requestTypes[array_rand($requestTypes)];
             $requestMode = $requestModes[array_rand($requestModes)];
@@ -96,6 +102,7 @@ class RequestsSeeder extends Seeder
 
             $requests[] = Request::create([
                 'user_id' => $user->id,
+                'employee_id' => $employeeRec->id,
                 'equipment_id' => $equipmentItem->id,
                 'request_type' => $requestType,
                 'request_mode' => $requestMode,
@@ -114,6 +121,7 @@ class RequestsSeeder extends Seeder
         // Create rejected requests (5 items)
         for ($i = 0; $i < 5; $i++) {
             $user = $users->random();
+            $employeeRec = $employees->random();
             $equipmentItem = $equipment->random();
             $requestType = $requestTypes[array_rand($requestTypes)];
             $requestMode = $requestModes[array_rand($requestModes)];
@@ -133,6 +141,7 @@ class RequestsSeeder extends Seeder
 
             $requests[] = Request::create([
                 'user_id' => $user->id,
+                'employee_id' => $employeeRec->id,
                 'equipment_id' => $equipmentItem->id,
                 'request_type' => $requestType,
                 'request_mode' => $requestMode,
@@ -151,6 +160,7 @@ class RequestsSeeder extends Seeder
         // Create cancelled requests (3 items)
         for ($i = 0; $i < 3; $i++) {
             $user = $users->random();
+            $employeeRec = $employees->random();
             $equipmentItem = $equipment->random();
             $requestType = $requestTypes[array_rand($requestTypes)];
             $requestMode = $requestModes[array_rand($requestModes)];
@@ -158,6 +168,7 @@ class RequestsSeeder extends Seeder
 
             $requests[] = Request::create([
                 'user_id' => $user->id,
+                'employee_id' => $employeeRec->id,
                 'equipment_id' => $equipmentItem->id,
                 'request_type' => $requestType,
                 'request_mode' => $requestMode,

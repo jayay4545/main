@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from './services/api';
 import { Search, Printer, Eye, Folder, User, Clock, ChevronDown, ChevronUp, FileText, Home, Check, X, Pencil } from 'lucide-react';
 import VerificationModal from './components/VerificationModal';
 
@@ -17,20 +18,54 @@ const SuperAdmin = () => {
     reason: ''
   });
 
-  const [pendingRequests, setPendingRequests] = useState([
-    { id: 1, name: "John Paul Francisco", position: "NOC tier 1", item: "Dell Laptop + 24\" Monitor", status: "Pending", approvedBy: "Ms. France", requestDate: "2024-01-15" },
-    { id: 2, name: "Kyle Dela Cruz", position: "NOC tier 1", item: "MacBook Pro + Magic Mouse", status: "Pending", approvedBy: "Ms. Jewel", requestDate: "2024-01-16" },
-    { id: 3, name: "Rica Alorro", position: "NOC tier 1", item: "HP Laptop + External Keyboard", status: "Pending", approvedBy: "Ms. France", requestDate: "2024-01-17" },
-    { id: 4, name: "Carlo Divino", position: "NOC tier 1", item: "Lenovo ThinkPad + Webcam", status: "Pending", approvedBy: "Ms. France", requestDate: "2024-01-18" },
-    { id: 5, name: "Maria Santos", position: "Software Developer", item: "Gaming Chair + Standing Desk", status: "Pending", approvedBy: "Mr. Johnson", requestDate: "2024-01-19" },
-    { id: 6, name: "David Kim", position: "UI/UX Designer", item: "Wacom Tablet + 4K Monitor", status: "Pending", approvedBy: "Ms. Smith", requestDate: "2024-01-20" },
-    { id: 7, name: "Sarah Johnson", position: "Project Manager", item: "Noise Cancelling Headphones", status: "Pending", approvedBy: "Mr. Brown", requestDate: "2024-01-21" },
-  ]);
-  const [approvedRequests, setApprovedRequests] = useState([
-    { id: 101, name: "Alex Thompson", position: "Senior Developer", item: "Dell XPS 15 + Dual Monitors", status: "Approved", approvedBy: "John F.", approvedAt: "2024-01-10" },
-    { id: 102, name: "Lisa Chen", position: "Data Analyst", item: "MacBook Air + iPad Pro", status: "Approved", approvedBy: "John F.", approvedAt: "2024-01-12" },
-    { id: 103, name: "Michael Rodriguez", position: "DevOps Engineer", item: "Mechanical Keyboard + Mouse", status: "Approved", approvedBy: "John F.", approvedAt: "2024-01-14" },
-  ]);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [approvedRequests, setApprovedRequests] = useState([]);
+  const [currentHolders, setCurrentHolders] = useState([]);
+  const [verifyReturns, setVerifyReturns] = useState([]);
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const response = await api.get('/transactions');
+        
+        if (response.data && response.data.success && Array.isArray(response.data.data)) {
+          const transactions = response.data.data;
+          
+          // Map database fields to display format
+          const mappedTransactions = transactions.map(transaction => ({
+            id: transaction.id,
+            name: `${transaction.first_name} ${transaction.last_name}`,
+            position: transaction.position,
+            item: transaction.equipment_name,
+            requestDate: new Date(transaction.created_at).toLocaleDateString(),
+            status: transaction.status,
+            requestMode: transaction.request_mode,
+            expectedReturnDate: transaction.expected_return_date,
+            releaseDate: transaction.release_date,
+            returnDate: transaction.return_date,
+            releaseCondition: transaction.release_condition,
+            returnCondition: transaction.return_condition,
+            releaseNotes: transaction.release_notes,
+            returnNotes: transaction.return_notes,
+            transactionNumber: transaction.transaction_number,
+            categoryName: transaction.category_name,
+            brand: transaction.brand,
+            model: transaction.model
+          }));
+          
+          // Filter transactions by status
+          setPendingRequests(mappedTransactions.filter(t => t.status === 'pending'));
+          setApprovedRequests(mappedTransactions.filter(t => t.status === 'released'));
+          setCurrentHolders(mappedTransactions.filter(t => t.status === 'released'));
+          setVerifyReturns(mappedTransactions.filter(t => t.status === 'returned' || t.status === 'lost' || t.status === 'damaged'));
+        }
+      } catch (err) {
+        console.error('Error fetching transactions:', err);
+      }
+    };
+
+    fetchTransactions();
+  }, []);
 
   const menuItems = [
     { icon: Home, label: 'Home' },
@@ -120,19 +155,7 @@ const SuperAdmin = () => {
     setModalState(prev => ({ ...prev, reason }));
   };
 
-  const currentHolders = [
-    { id: 1, name: "John Paul Francisco", position: "NOC tier 1", item: "Laptop, Monitor, etc", requestMode: "W.F.H", endDate: "10/08/25" },
-    { id: 2, name: "Kyle Dela Cruz", position: "NOC tier 1", item: "Laptop, Monitor, etc", requestMode: "Onsite", endDate: "15/08/25" },
-    { id: 3, name: "Rica Alorro", position: "NOC tier 1", item: "Laptop, Monitor, etc", requestMode: "W.F.H", endDate: "12/08/25" },
-    { id: 4, name: "Carlo Divino", position: "NOC tier 1", item: "Laptop, Monitor, etc", requestMode: "Onsite", endDate: "18/08/25" },
-  ];
-
-  const verifyReturns = [
-    { id: 1, name: "John Paul Francisco", position: "NOC tier 1", item: "Laptop, Monitor, etc", endDate: "10/08/25", status: "Partial" },
-    { id: 2, name: "Kyle Dela Cruz", position: "NOC tier 1", item: "Laptop, Monitor, etc", endDate: "15/08/25", status: "Returned" },
-    { id: 3, name: "Rica Alorro", position: "NOC tier 1", item: "Laptop, Monitor, etc", endDate: "12/08/25", status: "Partial" },
-    { id: 4, name: "Carlo Divino", position: "NOC tier 1", item: "Laptop, Monitor, etc", endDate: "18/08/25", status: "Returned" },
-  ];
+  // ...existing code...
 
   
   return (
@@ -351,7 +374,7 @@ const SuperAdmin = () => {
             <div className="bg-gray-100 rounded-2xl p-6 shadow flex flex-col">
               <h4 className="text-sm font-semibold text-gray-600">Verify Return</h4>
               <div className="mt-4 flex items-center justify-between">
-                <p className="text-4xl font-bold text-gray-900">6</p>
+                <p className="text-4xl font-bold text-gray-900">{verifyReturns.length}</p>
                 <div className="w-10 h-10 rounded-full bg-gray-300"></div>
               </div>
             </div>
@@ -566,8 +589,10 @@ const SuperAdmin = () => {
                           <div className="text-gray-500 text-xs">{req.position}</div>
                         </td>
                         <td className="py-4 text-gray-700">{req.item}</td>
-                        <td className="py-4 text-gray-700">{req.requestMode}</td>
-                        <td className="py-4 text-red-600">{req.endDate}</td>
+                        <td className="py-4 text-gray-700">{req.requestMode === 'work_from_home' ? 'W.F.H' : 'Onsite'}</td>
+                        <td className="py-4 text-red-600">
+                          {req.expectedReturnDate ? new Date(req.expectedReturnDate).toLocaleDateString() : 'N/A'}
+                        </td>
                         <td className="py-4">
                           <div className="flex items-center justify-end space-x-4 text-gray-700">
                             <Eye className="h-5 w-5" />
@@ -605,11 +630,22 @@ const SuperAdmin = () => {
                           <div className="text-gray-500 text-xs">{req.position}</div>
                         </td>
                         <td className="py-4 text-gray-700">{req.item}</td>
-                        <td className="py-4 text-red-600">{req.endDate}</td>
+                        <td className="py-4 text-red-600">
+                          {req.expectedReturnDate ? new Date(req.expectedReturnDate).toLocaleDateString() : 'N/A'}
+                        </td>
                         <td className="py-4">
                           <div className="flex items-center justify-end space-x-3">
-                            <span className="px-3 py-1 rounded-full text-xs bg-green-100 text-green-700">Partial</span>
-                            <span className="px-3 py-1 rounded-full text-xs bg-green-600 text-white">Returned</span>
+                            <span className={`px-3 py-1 rounded-full text-xs ${
+                              req.status === 'returned' 
+                                ? 'bg-green-100 text-green-700' 
+                                : req.status === 'lost'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {req.status === 'returned' ? 'Returned' : 
+                               req.status === 'lost' ? 'Lost' : 
+                               req.status === 'damaged' ? 'Damaged' : req.status}
+                            </span>
                           </div>
                         </td>
                       </tr>

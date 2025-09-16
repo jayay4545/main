@@ -54,13 +54,16 @@ class TransactionController extends Controller
             $transactions = DB::table('transactions')
                 ->join('employees', 'transactions.employee_id', '=', 'employees.id')
                 ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
+                ->leftJoin('equipment_categories', 'equipments.category_id', '=', 'equipment_categories.id')
                 ->select(
                     'transactions.*',
                     'employees.first_name',
                     'employees.last_name',
                     'employees.position',
                     'equipments.name as equipment_name',
-                    'equipments.category'
+                    'equipments.brand',
+                    'equipments.model',
+                    'equipment_categories.name as category_name'
                 )
                 ->orderBy('transactions.created_at', 'desc')
                 ->get();
@@ -139,6 +142,7 @@ class TransactionController extends Controller
             $transaction = DB::table('transactions')
                 ->join('employees', 'transactions.employee_id', '=', 'employees.id')
                 ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
+                ->leftJoin('equipment_categories', 'equipments.category_id', '=', 'equipment_categories.id')
                 ->where('transactions.id', $id)
                 ->select(
                     'transactions.*',
@@ -146,7 +150,9 @@ class TransactionController extends Controller
                     'employees.last_name',
                     'employees.position',
                     'equipments.name as equipment_name',
-                    'equipments.category'
+                    'equipments.brand',
+                    'equipments.model',
+                    'equipment_categories.name as category_name'
                 )
                 ->first();
 

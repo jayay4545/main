@@ -13,6 +13,7 @@ Route::get('/user', function (Request $request) {
 Route::get('/employees', [EmployeeController::class, 'index']);
 Route::get('/employees/current-holders', [EmployeeController::class, 'currentHolders']);
 Route::get('/employees/pending-requests', [EmployeeController::class, 'pendingRequests']);
+Route::get('/employees/approved-requests', [EmployeeController::class, 'approvedRequests']);
 Route::get('/employees/verify-returns', [EmployeeController::class, 'verifyReturns']);
 Route::post('/employees', [EmployeeController::class, 'store']);
 Route::get('/employees/{id}', [EmployeeController::class, 'show']);

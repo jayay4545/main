@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             EquipmentCategorySeeder::class,
             UserSeeder::class,
+            EmployeesSeeder::class,
             EquipmentSeeder::class,
             RequestsSeeder::class,
         ]);
