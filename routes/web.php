@@ -24,6 +24,10 @@ Route::get('/viewrequest', function () {
     return view('viewrequest'); // loads resources/views/viewrequest.blade.php
 })->name('viewrequest');
 
+Route::get('/activitylogs', function () {
+    return view('activitylogs');
+})->name('activitylogs');
+
  
 Route::post('/login', function () {
     // Get credentials from request

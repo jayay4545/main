@@ -5,6 +5,7 @@ import EmployeePage from './EmployeePage.jsx';
 import SimpleEmployee from './SimpleEmployee';
 import ViewRequest from './ViewRequest';
 import ViewApproved from './ViewApproved.jsx';
+import ActivityLogs from './ActivityLogs.jsx';
 import HomePage from './Home.jsx';
 import Equipment from './Equipment.jsx';
 import AddStocks from './AddStocks.jsx';
@@ -32,6 +33,7 @@ try {
 // Expose components globally
 window.ViewApproved = ViewApproved;
 window.ViewRequest = ViewRequest;
+window.ActivityLogs = ActivityLogs;
 window.Equipment = Equipment;
 window.AddStocks = AddStocks;
 window.EmployeePage = EmployeePage;
@@ -264,6 +266,31 @@ document.addEventListener('DOMContentLoaded', function() {
               <div style="padding: 20px; background-color: #ffebee; border: 2px solid #f44336; border-radius: 5px; margin: 20px; text-align: center;">
                 <h2 style="color: #d32f2f;">Control Panel Failed to Load</h2>
                 <p>There was an error loading the Control Panel component. Please try reloading the page.</p>
+                <button onclick="window.location.reload()" style="padding: 10px 20px; background-color: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+                  Reload Page
+                </button>
+              </div>
+            `;
+        }
+    }
+    
+    // Check for activitylogs-root (for activity logs page)
+    const activityLogsContainer = document.getElementById('activitylogs-root');
+    console.log('activitylogs-root element found:', activityLogsContainer);
+    
+    if (activityLogsContainer) {
+        try {
+            console.log('Initializing ActivityLogs component');
+            const root = createRoot(activityLogsContainer);
+            root.render(React.createElement(ActivityLogs));
+            console.log('ActivityLogs component rendered successfully');
+        } catch (error) {
+            console.error('Error rendering ActivityLogs component:', error);
+            // Display error message in the UI
+            activityLogsContainer.innerHTML = `
+              <div style="padding: 20px; background-color: #ffebee; border: 2px solid #f44336; border-radius: 5px; margin: 20px; text-align: center;">
+                <h2 style="color: #d32f2f;">Activity Logs Failed to Load</h2>
+                <p>There was an error loading the Activity Logs component. Please try reloading the page.</p>
                 <button onclick="window.location.reload()" style="padding: 10px 20px; background-color: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
                   Reload Page
                 </button>

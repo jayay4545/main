@@ -134,10 +134,13 @@ const HomeSidebar = ({ onSelect }) => {
           <span>Control Panel</span>
         </a>
 
-        <button className="flex items-center w-full space-x-3 px-4 py-2 rounded-r-full transition-colors hover:bg-white hover:text-blue-600">
+        <a
+          href="/activitylogs"
+          className={linkClass('/activitylogs')}
+        >
           <Clock className="h-5 w-5" />
           <span>Activity Logs</span>
-        </button>
+        </a>
 
         <a
           href="/users"
