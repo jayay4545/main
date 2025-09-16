@@ -65,17 +65,16 @@ class EmployeeController extends Controller
     {
         try {
             $currentHolders = DB::table('transactions')
-                ->join('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
-                ->where('transactions.status', 'released')
+                ->join('users', 'transactions.user_id', '=', 'users.id')
+                ->join('equipment', 'transactions.equipment_id', '=', 'equipment.id')
+                ->where('transactions.status', 'completed')
                 ->select(
                     'transactions.id as transaction_id',
                     'transactions.transaction_number',
-                    'employees.first_name',
-                    'employees.last_name',
-                    'employees.position',
-                    'equipments.name as equipment_name',
-                    'equipments.category',
+                    'users.name as full_name',
+                    'users.position',
+                    'equipment.name as equipment_name',
+                    'equipment.brand as category',
                     'transactions.request_mode',
                     'transactions.expected_return_date',
                     'transactions.release_date'
@@ -104,7 +103,7 @@ class EmployeeController extends Controller
         try {
             $pendingRequests = DB::table('requests')
                 ->join('employees', 'requests.employee_id', '=', 'employees.id')
-                ->join('equipments', 'requests.equipment_id', '=', 'equipments.id')
+                ->join('equipment', 'requests.equipment_id', '=', 'equipment.id')
                 ->where('requests.status', 'pending')
                 ->select(
                     'requests.id as request_id',
@@ -112,8 +111,8 @@ class EmployeeController extends Controller
                     'employees.first_name',
                     'employees.last_name',
                     'employees.position',
-                    'equipments.name as equipment_name',
-                    'equipments.category',
+                    'equipment.name as equipment_name',
+                    'equipment.brand as category',
                     'requests.request_mode',
                     'requests.reason',
                     'requests.requested_date'
@@ -141,17 +140,16 @@ class EmployeeController extends Controller
     {
         try {
             $verifyReturns = DB::table('transactions')
-                ->join('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
-                ->where('transactions.status', 'returned')
+                ->join('users', 'transactions.user_id', '=', 'users.id')
+                ->join('equipment', 'transactions.equipment_id', '=', 'equipment.id')
+                ->where('transactions.status', 'overdue')
                 ->select(
                     'transactions.id as transaction_id',
                     'transactions.transaction_number',
-                    'employees.first_name',
-                    'employees.last_name',
-                    'employees.position',
-                    'equipments.name as equipment_name',
-                    'equipments.category',
+                    'users.name as full_name',
+                    'users.position',
+                    'equipment.name as equipment_name',
+                    'equipment.brand as category',
                     'transactions.return_date',
                     'transactions.expected_return_date',
                     'transactions.return_condition'
@@ -282,7 +280,7 @@ class EmployeeController extends Controller
             // Check if employee has active transactions
             $activeTransactions = DB::table('transactions')
                 ->where('employee_id', $id)
-                ->where('status', 'released')
+                ->where('status', 'completed')
                 ->count();
 
             if ($activeTransactions > 0) {

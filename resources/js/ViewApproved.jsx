@@ -1,22 +1,160 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Printer, ChevronDown } from 'lucide-react';
 import Taskbar from './components/Taskbar.jsx';
 import HomeSidebar from './HomeSidebar';
+import ConfirmModal from './components/ConfirmModal.jsx';
+import PrintReceipt from './components/PrintReceipt.jsx';
+import { transactionService, apiUtils } from './services/api.js';
 
 const ViewApproved = () => {
-  const approved = [
-    { id: 1, name: 'John Paul Francisco', position: 'NOC tier 1', item: 'Laptop, Monitor, etc', status: 'Approved', approvedBy: 'Ms. France' },
-    { id: 2, name: 'Kyle Dela Cruz', position: 'NOC tier 1', item: 'Laptop, Monitor, etc', status: 'Approved', approvedBy: 'Ms. Jewel' },
-    { id: 3, name: 'Rica Alorro', position: 'NOC tier 1', item: 'Laptop, Monitor, etc', status: 'Approved', approvedBy: 'Ms. France' },
-    { id: 4, name: 'Carlo Divino', position: 'NOC tier 1', item: 'Laptop, Monitor, etc', status: 'Approved', approvedBy: 'Ms. France' },
-  ];
-
+  const [approved, setApproved] = useState([]);
+  const [currentHolders, setCurrentHolders] = useState([]);
+  const [verifyReturns, setVerifyReturns] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState({
+    new_requests: 0,
+    current_holders: 0,
+    verify_returns: 0
+  });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [view, setView] = useState('viewApproved');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Modal states
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    type: null,
+    transactionData: null
+  });
+  const [printModal, setPrintModal] = useState({
+    isOpen: false,
+    transactionData: null
+  });
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch dashboard stats
+      const statsResponse = await transactionService.getDashboard();
+      if (statsResponse.success) {
+        setDashboardStats(statsResponse.data);
+      }
+      
+      // Fetch approved transactions (status = 'active' - ready for release)
+      const approvedResponse = await transactionService.getAll({ status: 'active' });
+      if (approvedResponse.success) {
+        setApproved(approvedResponse.data);
+      }
+      
+      // Fetch current holders (status = 'completed' - equipment released)
+      const holdersResponse = await transactionService.getAll({ status: 'completed' });
+      if (holdersResponse.success) {
+        setCurrentHolders(holdersResponse.data);
+      }
+      
+      // Fetch verify returns (status = 'overdue' - equipment returned)
+      const returnsResponse = await transactionService.getAll({ status: 'overdue' });
+      if (returnsResponse.success) {
+        setVerifyReturns(returnsResponse.data);
+      }
+      
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError(apiUtils.handleError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSelect = (next) => {
     setView(next);
     setIsMenuOpen(false);
+  };
+
+  // Handle release action
+  const handleRelease = async (transactionData) => {
+    try {
+      const response = await transactionService.release(transactionData.id, {
+        notes: transactionData.notes,
+        condition_on_issue: transactionData.condition_on_issue
+      });
+      
+      if (response.success) {
+        // Update the local state
+        setApproved(prev => prev.filter(item => item.id !== transactionData.id));
+        setCurrentHolders(prev => [...prev, response.data]);
+        
+        // Update dashboard stats
+        setDashboardStats(prev => ({
+          ...prev,
+          current_holders: prev.current_holders + 1
+        }));
+        
+        // Close modal
+        setConfirmModal({ isOpen: false, type: null, transactionData: null });
+        
+        // Automatically trigger print functionality for accountability form
+        setTimeout(() => {
+          handlePrint(transactionData);
+        }, 500); // Small delay to ensure modal is closed
+        
+        // Show success message
+        alert('Equipment released successfully! Accountability form will be printed.');
+      }
+    } catch (err) {
+      console.error('Error releasing equipment:', err);
+      alert('Error releasing equipment: ' + apiUtils.handleError(err));
+    }
+  };
+
+  // Handle print action
+  const handlePrint = async (transactionData) => {
+    try {
+      // If transactionData doesn't have an id, it might be the wrong format
+      if (!transactionData || !transactionData.id) {
+        console.error('Invalid transaction data for printing:', transactionData);
+        alert('Error: Invalid transaction data for printing');
+        return;
+      }
+
+      const response = await transactionService.print(transactionData.id);
+      
+      if (response.success) {
+        setPrintModal({
+          isOpen: true,
+          transactionData: response.data
+        });
+      } else {
+        alert('Error generating print data: ' + response.message);
+      }
+    } catch (err) {
+      console.error('Error fetching print data:', err);
+      alert('Error generating receipt: ' + apiUtils.handleError(err));
+    }
+  };
+
+  // Modal handlers
+  const openConfirmModal = (type, transactionData) => {
+    setConfirmModal({
+      isOpen: true,
+      type,
+      transactionData
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal({ isOpen: false, type: null, transactionData: null });
+  };
+
+  const closePrintModal = () => {
+    setPrintModal({ isOpen: false, transactionData: null });
   };
 
   return (
@@ -34,21 +172,21 @@ const ViewApproved = () => {
           <div className="bg-blue-600 text-white rounded-2xl p-6 shadow flex flex-col">
             <h4 className="text-sm uppercase tracking-wider opacity-80">New Requests</h4>
             <div className="mt-4 flex items-center justify-between">
-              <p className="text-5xl font-bold">11</p>
+              <p className="text-5xl font-bold">{loading ? '...' : dashboardStats.new_requests}</p>
               <div className="w-10 h-10 rounded-full bg-white/30"></div>
             </div>
           </div>
           <div className="bg-gray-100 rounded-2xl p-6 shadow flex flex-col">
             <h4 className="text-sm font-semibold text-gray-600">Current holder</h4>
             <div className="mt-4 flex items-center justify-between">
-              <p className="text-4xl font-bold text-gray-900">22</p>
+              <p className="text-4xl font-bold text-gray-900">{loading ? '...' : dashboardStats.current_holders}</p>
               <div className="w-10 h-10 rounded-full bg-gray-300"></div>
             </div>
           </div>
           <div className="bg-gray-100 rounded-2xl p-6 shadow flex flex-col">
             <h4 className="text-sm font-semibold text-gray-600">Verify Return</h4>
             <div className="mt-4 flex items-center justify-between">
-              <p className="text-4xl font-bold text-gray-900">6</p>
+              <p className="text-4xl font-bold text-gray-900">{loading ? '...' : dashboardStats.verify_returns}</p>
               <div className="w-10 h-10 rounded-full bg-gray-300"></div>
             </div>
           </div>
@@ -93,21 +231,52 @@ const ViewApproved = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {approved.map((row) => (
-                    <tr key={row.id} className="border-b last:border-0">
-                      <td className="py-4">{row.name}</td>
-                      <td className="py-4">{row.position}</td>
-                      <td className="py-4">{row.item}</td>
-                      <td className="py-4 text-green-600">{row.status}</td>
-                      <td className="py-4">{row.approvedBy}</td>
-                      <td className="py-4">
-                        <div className="flex items-center justify-end space-x-3">
-                          <Printer className="h-5 w-5 text-gray-500" />
-                          <button className="px-3 py-1 bg-green-600 text-white rounded-full text-xs">Release</button>
-                        </div>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="6" className="py-8 text-center text-gray-500">
+                        Loading approved transactions...
                       </td>
                     </tr>
-                  ))}
+                  ) : error ? (
+                    <tr>
+                      <td colSpan="6" className="py-8 text-center text-red-500">
+                        Error: {error}
+                      </td>
+                    </tr>
+                  ) : approved.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="py-8 text-center text-gray-500">
+                        No approved transactions found
+                      </td>
+                    </tr>
+                  ) : (
+                    approved.map((row) => (
+                      <tr key={row.id} className="border-b last:border-0">
+                        <td className="py-4">{row.full_name}</td>
+                        <td className="py-4">{row.position}</td>
+                        <td className="py-4">{row.equipment_name}</td>
+                        <td className="py-4 text-green-600">{row.status}</td>
+                        <td className="py-4">{row.approved_by_name || 'N/A'}</td>
+                        <td className="py-4">
+                          <div className="flex items-center justify-end space-x-3">
+                            <button
+                              onClick={() => handlePrint(row)}
+                              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                              title="Print Receipt"
+                            >
+                              <Printer className="h-5 w-5 text-gray-500 hover:text-gray-700" />
+                            </button>
+                            <button 
+                              onClick={() => openConfirmModal('release', row)}
+                              className="px-3 py-1 bg-green-600 text-white rounded-full text-xs hover:bg-green-700 transition-colors"
+                            >
+                              Release
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -188,6 +357,22 @@ const ViewApproved = () => {
         </div>
       </main>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirmModal}
+        onConfirm={handleRelease}
+        transactionData={confirmModal.transactionData}
+        type={confirmModal.type}
+      />
+
+      {/* Print Receipt Modal */}
+      <PrintReceipt
+        isOpen={printModal.isOpen}
+        onClose={closePrintModal}
+        transactionData={printModal.transactionData}
+      />
     </div>
   );
 };
