@@ -40,17 +40,16 @@ class TransactionController extends Controller
     {
         try {
             $transactions = DB::table('transactions')
-                ->join('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
+                ->join('users', 'transactions.user_id', '=', 'users.id')
+                ->join('equipment', 'transactions.equipment_id', '=', 'equipment.id')
                 ->leftJoin('users as released_by_user', 'transactions.released_by', '=', 'released_by_user.id')
                 ->leftJoin('users as received_by_user', 'transactions.received_by', '=', 'received_by_user.id')
                 ->select(
                     'transactions.*',
-                    'employees.first_name',
-                    'employees.last_name',
-                    'employees.position',
-                    'equipments.name as equipment_name',
-                    'equipments.category',
+                    'users.name as full_name',
+                    'users.position',
+                    'equipment.name as equipment_name',
+                    'equipment.brand as category',
                     'released_by_user.name as released_by_name',
                     'received_by_user.name as received_by_name'
                 )

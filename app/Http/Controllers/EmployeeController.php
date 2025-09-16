@@ -67,7 +67,6 @@ class EmployeeController extends Controller
             $currentHolders = DB::table('transactions')
                 ->join('employees', 'transactions.employee_id', '=', 'employees.id')
                 ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
-                ->leftJoin('equipment_categories', 'equipments.category_id', '=', 'equipment_categories.id')
                 ->where('transactions.status', 'released')
                 ->select(
                     'transactions.id as transaction_id',
@@ -76,7 +75,7 @@ class EmployeeController extends Controller
                     'employees.last_name',
                     'employees.position',
                     'equipments.name as equipment_name',
-                    DB::raw('COALESCE(equipment_categories.name, "Uncategorized") as category'),
+                    'equipments.category',
                     'transactions.request_mode',
                     'transactions.expected_return_date',
                     'transactions.release_date'
@@ -107,7 +106,6 @@ class EmployeeController extends Controller
             $pendingRequests = DB::table('requests')
                 ->join('employees', 'requests.employee_id', '=', 'employees.id')
                 ->join('equipments', 'requests.equipment_id', '=', 'equipments.id')
-                ->leftJoin('equipment_categories', 'equipments.category_id', '=', 'equipment_categories.id')
                 ->where('requests.status', 'pending')
                 ->select(
                     'requests.id as request_id',
@@ -116,7 +114,7 @@ class EmployeeController extends Controller
                     'employees.last_name',
                     'employees.position',
                     'equipments.name as equipment_name',
-                    DB::raw('COALESCE(equipment_categories.name, "Uncategorized") as category'),
+                    'equipments.category',
                     'requests.request_mode',
                     'requests.reason',
                     'requests.created_at as requested_date'
@@ -188,7 +186,6 @@ class EmployeeController extends Controller
             $verifyReturns = DB::table('transactions')
                 ->join('employees', 'transactions.employee_id', '=', 'employees.id')
                 ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
-                ->leftJoin('equipment_categories', 'equipments.category_id', '=', 'equipment_categories.id')
                 ->where('transactions.status', 'returned')
                 ->select(
                     'transactions.id as transaction_id',
@@ -197,7 +194,7 @@ class EmployeeController extends Controller
                     'employees.last_name',
                     'employees.position',
                     'equipments.name as equipment_name',
-                    DB::raw('COALESCE(equipment_categories.name, "Uncategorized") as category'),
+                    'equipments.category',
                     'transactions.return_date',
                     'transactions.expected_return_date',
                     'transactions.return_condition'
@@ -329,7 +326,7 @@ class EmployeeController extends Controller
             // Check if employee has active transactions
             $activeTransactions = DB::table('transactions')
                 ->where('employee_id', $id)
-                ->where('status', 'released')
+                ->where('status', 'completed')
                 ->count();
 
             if ($activeTransactions > 0) {

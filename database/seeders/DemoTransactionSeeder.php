@@ -57,11 +57,11 @@ class DemoTransactionSeeder extends Seeder
         }
 
         // Find or create equipment
-        $equipment = DB::table('equipments')->first();
+        $equipment = DB::table('equipment')->first();
         
         // If no equipment found, create one
         if (!$equipment) {
-            $equipmentId = DB::table('equipments')->insertGetId([
+            $equipmentId = DB::table('equipment')->insertGetId([
                 'equipment_code' => 'EQ001',
                 'name' => 'Sample Equipment',
                 'category' => 'Laptop',
@@ -76,7 +76,7 @@ class DemoTransactionSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
-            $equipment = DB::table('equipments')->where('id', $equipmentId)->first();
+            $equipment = DB::table('equipment')->where('id', $equipmentId)->first();
         }
         
         // Find or create user
