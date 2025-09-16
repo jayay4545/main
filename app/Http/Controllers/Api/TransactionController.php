@@ -103,9 +103,9 @@ class TransactionController extends Controller
                 'employee_id' => 'required|exists:employees,id',
                 'equipment_id' => 'required|exists:equipments,id',
                 'transaction_number' => 'required|string|unique:transactions,transaction_number',
-                'request_mode' => 'required|in:work_from_home,onsite',
+                'request_mode' => 'required|in:work_from_home,on_site',
                 'expected_return_date' => 'required|date',
-                'status' => 'sometimes|in:pending,released,returned,verified',
+                'status' => 'sometimes|in:pending,released,returned,lost,damaged',
             ]);
 
             $validatedData['status'] = $validatedData['status'] ?? 'pending';
@@ -203,11 +203,16 @@ class TransactionController extends Controller
             }
 
             $validatedData = $request->validate([
-                'status' => 'sometimes|in:pending,released,returned,verified',
+                'status' => 'sometimes|in:pending,released,returned,lost,damaged',
                 'expected_return_date' => 'sometimes|date',
                 'return_date' => 'sometimes|date',
-                'return_condition' => 'sometimes|string',
-                'notes' => 'sometimes|string',
+                'release_date' => 'sometimes|date',
+                'return_condition' => 'sometimes|in:good_condition,brand_new,damaged',
+                'release_condition' => 'sometimes|in:good_condition,brand_new,damaged',
+                'release_notes' => 'sometimes|string',
+                'return_notes' => 'sometimes|string',
+                'received_by' => 'sometimes|nullable|exists:users,id',
+                'released_by' => 'sometimes|nullable|exists:users,id',
             ]);
 
             $validatedData['updated_at'] = now();
@@ -270,6 +275,137 @@ class TransactionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error deleting transaction: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Release a transaction (change status to released)
+     */
+    public function release(Request $request, string $id)
+    {
+        try {
+            $transaction = DB::table('transactions')->where('id', $id)->first();
+            
+            if (!$transaction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaction not found'
+                ], 404);
+            }
+
+            if ($transaction->status === 'released') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaction is already released'
+                ], 400);
+            }
+
+            $validatedData = $request->validate([
+                'release_notes' => 'sometimes|string|max:500',
+                'release_condition' => 'sometimes|in:good_condition,brand_new,damaged',
+                'released_by' => 'required|exists:users,id',
+                'release_date' => 'sometimes|date',
+            ]);
+
+            $updateData = [
+                'status' => 'released',
+                'release_date' => $validatedData['release_date'] ?? now()->toDateString(),
+                'updated_at' => now(),
+            ];
+
+            if (isset($validatedData['release_notes'])) {
+                $updateData['release_notes'] = $validatedData['release_notes'];
+            }
+
+            if (isset($validatedData['release_condition'])) {
+                $updateData['release_condition'] = $validatedData['release_condition'];
+            }
+
+            $updateData['released_by'] = $validatedData['released_by'];
+
+            DB::table('transactions')->where('id', $id)->update($updateData);
+
+            $updatedTransaction = DB::table('transactions')
+                ->join('employees', 'transactions.employee_id', '=', 'employees.id')
+                ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
+                ->where('transactions.id', $id)
+                ->select(
+                    'transactions.*',
+                    'employees.first_name',
+                    'employees.last_name',
+                    'employees.position',
+                    'equipments.name as equipment_name',
+                    'equipments.brand',
+                    'equipments.model'
+                )
+                ->first();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaction released successfully',
+                'data' => $updatedTransaction
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error releasing transaction: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate printable receipt for transaction
+     */
+    public function print(string $id)
+    {
+        try {
+            $transaction = DB::table('transactions')
+                ->join('employees', 'transactions.employee_id', '=', 'employees.id')
+                ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
+                ->leftJoin('users as approved_by_user', 'transactions.released_by', '=', 'approved_by_user.id')
+                ->where('transactions.id', $id)
+                ->select(
+                    'transactions.*',
+                    'employees.first_name',
+                    'employees.last_name',
+                    'employees.position',
+                    'equipments.name as equipment_name',
+                    'equipments.brand',
+                    'equipments.serial_number',
+                    'equipments.model',
+                    'approved_by_user.name as approved_by_name'
+                )
+                ->first();
+
+            if (!$transaction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaction not found'
+                ], 404);
+            }
+
+            // Generate transaction number if not exists
+            if (!$transaction->transaction_number) {
+                $transactionNumber = 'TXN-' . str_pad($id, 6, '0', STR_PAD_LEFT);
+                DB::table('transactions')->where('id', $id)->update(['transaction_number' => $transactionNumber]);
+                $transaction->transaction_number = $transactionNumber;
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $transaction
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generating print data: ' . $e->getMessage()
             ], 500);
         }
     }

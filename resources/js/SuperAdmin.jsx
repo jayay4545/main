@@ -1,7 +1,144 @@
 import React, { useState, useEffect } from 'react';
 import api from './services/api';
-import { Search, Printer, Eye, Folder, User, Clock, ChevronDown, ChevronUp, FileText, Home, Check, X, Pencil } from 'lucide-react';
+import { Search, Printer, Check, X } from 'lucide-react';
 import VerificationModal from './components/VerificationModal';
+import Sidebar from './components/Sidebar';
+
+const SuperAdmin = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [transactions, setTransactions] = useState([]);
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
+  const [verificationStatus, setVerificationStatus] = useState('pending');
+
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  const fetchTransactions = async () => {
+    try {
+      const response = await api.get('/api/transactions');
+      if (response.data) {
+        setTransactions(response.data);
+      }
+    } catch (err) {
+      console.error('Error fetching transactions:', err);
+    }
+  };
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleVerificationClick = (id) => {
+    setSelectedId(id);
+    setIsVerificationModalOpen(true);
+  };
+
+  const handleVerification = async (status) => {
+    try {
+      await api.put(`/api/transactions/${selectedId}/verify`, { status });
+      setVerificationStatus(status);
+      setIsVerificationModalOpen(false);
+      fetchTransactions();
+    } catch (err) {
+      console.error('Error updating verification status:', err);
+    }
+  };
+
+  const filteredTransactions = transactions.filter(transaction => {
+    return transaction.id.toString().includes(searchTerm) ||
+           transaction.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           transaction.type.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  return (
+    <div className="flex h-screen bg-gray-100">
+      <Sidebar />
+      
+      <div className="flex-1 flex flex-col">
+        <header className="flex items-center justify-between px-6 py-4 bg-white">
+          <div className="flex-1 max-w-lg ml-9 mt-2">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search transactions..."
+                className="w-full pl-10 pr-4 py-2 border rounded-lg"
+                value={searchTerm}
+                onChange={handleSearch}
+              />
+              <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg">
+              <Printer className="h-5 w-5" />
+              <span>Print Report</span>
+            </button>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b">
+              <h2 className="text-lg font-semibold">Recent Transactions</h2>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredTransactions.map((transaction) => (
+                    <tr key={transaction.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">{transaction.id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{transaction.date}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{transaction.type}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                          ${transaction.status === 'completed' ? 'bg-green-100 text-green-800' :
+                            transaction.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'}`}>
+                          {transaction.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <button
+                          onClick={() => handleVerificationClick(transaction.id)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          Verify
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </main>
+      </div>
+
+      {isVerificationModalOpen && (
+        <VerificationModal
+          isOpen={isVerificationModalOpen}
+          onClose={() => setIsVerificationModalOpen(false)}
+          onVerify={handleVerification}
+        />
+      )}
+    </div>
+  );
+};
+
+export default SuperAdmin;
 
 const SuperAdmin = () => {
   const [activeMenu, setActiveMenu] = useState('Home');
@@ -24,30 +161,28 @@ const SuperAdmin = () => {
   const [verifyReturns, setVerifyReturns] = useState([]);
 
   useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const response = await api.get('/transactions');
-        
-        if (response.data && response.data.success && Array.isArray(response.data.data)) {
-          const transactions = response.data.data;
-          
-          // Map database fields to display format
-          const mappedTransactions = transactions.map(transaction => ({
-            id: transaction.id,
-            name: `${transaction.first_name} ${transaction.last_name}`,
-            position: transaction.position,
-            item: transaction.equipment_name,
-            requestDate: new Date(transaction.created_at).toLocaleDateString(),
-            status: transaction.status,
-            requestMode: transaction.request_mode,
-            expectedReturnDate: transaction.expected_return_date,
-            releaseDate: transaction.release_date,
-            returnDate: transaction.return_date,
-            releaseCondition: transaction.release_condition,
-            returnCondition: transaction.return_condition,
-            releaseNotes: transaction.release_notes,
-            returnNotes: transaction.return_notes,
-            transactionNumber: transaction.transaction_number,
+function SuperAdmin() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [transactions, setTransactions] = useState([]);
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
+  const [verificationStatus, setVerificationStatus] = useState('pending');
+
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  const fetchTransactions = async () => {
+    try {
+      const response = await api.get('/api/transactions');
+      if (response.data) {
+        setTransactions(response.data);
+      }
+    } catch (err) {
+      console.error('Error fetching transactions:', err);
+    }
+  };    fetchTransactions();
+  }, []);
             categoryName: transaction.category_name,
             brand: transaction.brand,
             model: transaction.model
@@ -160,39 +295,7 @@ const SuperAdmin = () => {
   
   return (
     <div className="min-h-screen bg-white-100 flex">
-      {/* Sidebar Wrapper */}
-      <div className="flex flex-col">
-        {/* Logo */}
-        <div className="flex items-center space-x-3">
-          <img
-            src="/images/Frame_89-removebg-preview.png"
-            alt="iREPLY Logo"
-            className="h-20 ml-4 w-auto object-contain"
-            onError={(e) => {
-              console.log('Image failed to load, trying fallback path');
-              e.target.onerror = null;
-              // Try multiple fallback paths
-              e.target.src = '/images/Frame 35.jpg';
-              // If that fails too, set another fallback
-              e.target.onerror = () => {
-                console.log('Fallback image also failed, using text fallback');
-                e.target.onerror = null;
-                // Replace with a div containing the text
-                const parent = e.target.parentNode;
-                if (parent) {
-                  const textNode = document.createElement('div');
-                  textNode.className = 'h-20 ml-4 flex items-center justify-center';
-                  textNode.innerHTML = '<span class="text-white font-bold text-xl">iREPLY</span>';
-                  parent.replaceChild(textNode, e.target);
-                }
-              };
-            }}
-          />
-        </div>
-
-        {/* Sidebar */}
-        <aside className="w-60 bg-blue-600 min-h-full relative overflow-hidden rounded-tr-[60px] flex flex-col">
-          <nav className="mt-8 space-y-2">
+      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
             {menuItems.map((item, index) => (
               <div key={index}>
                 {/* Main Menu Button */}

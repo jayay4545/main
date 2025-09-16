@@ -180,6 +180,21 @@ export const transactionService = {
     const response = await api.delete(`/transactions/${id}`);
     return response.data;
   },
+
+  release: async (id, releaseData = {}) => {
+    const response = await api.post(`/transactions/${id}/release`, releaseData);
+    return response.data;
+  },
+
+  print: async (id) => {
+    const response = await api.get(`/transactions/${id}/print`);
+    return response.data;
+  },
+
+  getDashboard: async () => {
+    const response = await api.get('/transactions/dashboard');
+    return response.data;
+  },
 };
 
 // User Services
