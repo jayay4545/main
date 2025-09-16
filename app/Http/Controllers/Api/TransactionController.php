@@ -51,19 +51,20 @@ class TransactionController extends Controller
     public function index()
     {
         try {
+            // Use left joins and coalesce to avoid hard failures if related tables/columns differ
             $transactions = DB::table('transactions')
-                ->join('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
+                ->leftJoin('employees', 'transactions.employee_id', '=', 'employees.id')
+                ->leftJoin('equipments', 'transactions.equipment_id', '=', 'equipments.id')
                 ->leftJoin('equipment_categories', 'equipments.category_id', '=', 'equipment_categories.id')
                 ->select(
                     'transactions.*',
-                    'employees.first_name',
-                    'employees.last_name',
-                    'employees.position',
-                    'equipments.name as equipment_name',
-                    'equipments.brand',
-                    'equipments.model',
-                    'equipment_categories.name as category_name'
+                    DB::raw("COALESCE(employees.first_name, '') as first_name"),
+                    DB::raw("COALESCE(employees.last_name, '') as last_name"),
+                    DB::raw("COALESCE(employees.position, '') as position"),
+                    DB::raw("COALESCE(equipments.name, '') as equipment_name"),
+                    DB::raw("COALESCE(equipments.brand, '') as brand"),
+                    DB::raw("COALESCE(equipments.model, '') as model"),
+                    DB::raw("COALESCE(equipment_categories.name, '') as category_name")
                 )
                 ->orderBy('transactions.created_at', 'desc')
                 ->get();
@@ -74,10 +75,21 @@ class TransactionController extends Controller
                 'count' => $transactions->count()
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error fetching transactions: ' . $e->getMessage()
-            ], 500);
+            // Fallback: return bare transactions to keep UI working
+            try {
+                $fallback = DB::table('transactions')->orderBy('created_at', 'desc')->get();
+                return response()->json([
+                    'success' => true,
+                    'data' => $fallback,
+                    'count' => $fallback->count(),
+                    'warning' => 'Returned minimal transaction data due to join error',
+                ]);
+            } catch (\Exception $inner) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error fetching transactions: ' . $e->getMessage()
+                ], 500);
+            }
         }
     }
 
