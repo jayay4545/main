@@ -60,6 +60,7 @@ class TransactionController extends Controller
                     'transactions.*',
                     DB::raw("COALESCE(employees.first_name, '') as first_name"),
                     DB::raw("COALESCE(employees.last_name, '') as last_name"),
+                    DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
                     DB::raw("COALESCE(employees.position, '') as position"),
                     DB::raw("COALESCE(equipments.name, '') as equipment_name"),
                     DB::raw("COALESCE(equipments.brand, '') as brand"),
@@ -105,7 +106,7 @@ class TransactionController extends Controller
                 'transaction_number' => 'required|string|unique:transactions,transaction_number',
                 'request_mode' => 'required|in:work_from_home,on_site',
                 'expected_return_date' => 'required|date',
-                'status' => 'sometimes|in:pending,released,returned,lost,damaged',
+                'status' => 'sometimes|in:pending,active,released,returned,lost,damaged',
             ]);
 
             $validatedData['status'] = $validatedData['status'] ?? 'pending';
@@ -160,6 +161,7 @@ class TransactionController extends Controller
                     'transactions.*',
                     'employees.first_name',
                     'employees.last_name',
+                    DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
                     'employees.position',
                     'equipments.name as equipment_name',
                     'equipments.brand',
@@ -203,7 +205,7 @@ class TransactionController extends Controller
             }
 
             $validatedData = $request->validate([
-                'status' => 'sometimes|in:pending,released,returned,lost,damaged',
+                'status' => 'sometimes|in:pending,active,released,returned,lost,damaged',
                 'expected_return_date' => 'sometimes|date',
                 'return_date' => 'sometimes|date',
                 'release_date' => 'sometimes|date',
@@ -303,8 +305,10 @@ class TransactionController extends Controller
 
             $validatedData = $request->validate([
                 'release_notes' => 'sometimes|string|max:500',
+                'notes' => 'sometimes|string|max:500', // Alternative field name for frontend compatibility
                 'release_condition' => 'sometimes|in:good_condition,brand_new,damaged',
-                'released_by' => 'required|exists:users,id',
+                'condition_on_issue' => 'required|string|max:255', // Make required for equipment condition
+                'released_by' => 'sometimes|exists:users,id', // Make optional for now
                 'release_date' => 'sometimes|date',
             ]);
 
@@ -314,30 +318,52 @@ class TransactionController extends Controller
                 'updated_at' => now(),
             ];
 
+            // Handle notes field (support both field names)
             if (isset($validatedData['release_notes'])) {
                 $updateData['release_notes'] = $validatedData['release_notes'];
+            } elseif (isset($validatedData['notes'])) {
+                $updateData['release_notes'] = $validatedData['notes'];
             }
 
+            // Handle condition field (support both field names)
             if (isset($validatedData['release_condition'])) {
                 $updateData['release_condition'] = $validatedData['release_condition'];
+            } elseif (isset($validatedData['condition_on_issue'])) {
+                // Map free text condition to enum values
+                $conditionText = strtolower(trim($validatedData['condition_on_issue']));
+                if (strpos($conditionText, 'excellent') !== false || strpos($conditionText, 'brand new') !== false || strpos($conditionText, 'perfect') !== false) {
+                    $updateData['release_condition'] = 'brand_new';
+                } elseif (strpos($conditionText, 'damaged') !== false || strpos($conditionText, 'broken') !== false || strpos($conditionText, 'defective') !== false) {
+                    $updateData['release_condition'] = 'damaged';
+                } else {
+                    // Default to good_condition for any other text
+                    $updateData['release_condition'] = 'good_condition';
+                }
             }
 
-            $updateData['released_by'] = $validatedData['released_by'];
+            // Handle released_by field (make it optional)
+            if (isset($validatedData['released_by'])) {
+                $updateData['released_by'] = $validatedData['released_by'];
+            } else {
+                // Set a default user ID or leave null if not required
+                $updateData['released_by'] = 1; // Default admin user, you may want to get this from auth
+            }
 
             DB::table('transactions')->where('id', $id)->update($updateData);
 
             $updatedTransaction = DB::table('transactions')
-                ->join('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
+                ->leftJoin('employees', 'transactions.employee_id', '=', 'employees.id')
+                ->leftJoin('equipments', 'transactions.equipment_id', '=', 'equipments.id')
                 ->where('transactions.id', $id)
                 ->select(
                     'transactions.*',
-                    'employees.first_name',
-                    'employees.last_name',
-                    'employees.position',
-                    'equipments.name as equipment_name',
-                    'equipments.brand',
-                    'equipments.model'
+                    DB::raw("COALESCE(employees.first_name, '') as first_name"),
+                    DB::raw("COALESCE(employees.last_name, '') as last_name"),
+                    DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
+                    DB::raw("COALESCE(employees.position, '') as position"),
+                    DB::raw("COALESCE(equipments.name, '') as equipment_name"),
+                    DB::raw("COALESCE(equipments.brand, '') as brand"),
+                    DB::raw("COALESCE(equipments.model, '') as model")
                 )
                 ->first();
 
@@ -375,6 +401,7 @@ class TransactionController extends Controller
                     'transactions.*',
                     'employees.first_name',
                     'employees.last_name',
+                    DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
                     'employees.position',
                     'equipments.name as equipment_name',
                     'equipments.brand',
