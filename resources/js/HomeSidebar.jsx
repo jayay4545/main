@@ -16,8 +16,18 @@ const HomeSidebar = ({ onSelect }) => {
 
   const isActive = (path) => typeof window !== 'undefined' && window.location && window.location.pathname === path;
   const linkClass = (path) =>
-    `flex items-center w-full space-x-3 px-4 py-2 rounded-r-full transition-colors ${
-      isActive(path) ? 'bg-white text-[#2262C6]' : 'hover:bg-white hover:text-[#2262C6]'
+    `flex items-center w-full space-x-3 px-5 py-3 rounded-full transition-colors ${
+      isActive(path)
+        ? 'bg-white text-[#2262C6] shadow-sm'
+        : 'hover:bg-white/90 hover:text-[#2262C6]'
+    }`;
+
+  // Section active states for pill styling on dropdown toggles
+  const isTransactionActive = () => isActive('/viewrequest') || isActive('/viewapproved');
+  const isEquipmentActive = () => isActive('/equipment') || isActive('/addstocks');
+  const sectionButtonClass = (active) =>
+    `flex items-center w-full space-x-3 px-5 py-3 rounded-full transition-colors ${
+      active ? 'bg-white text-[#2262C6] shadow-sm' : 'hover:bg-white/90 hover:text-[#2262C6]'
     }`;
 
   return (
@@ -46,7 +56,7 @@ const HomeSidebar = ({ onSelect }) => {
 
         {/* Transaction */}
         <button
-          className="flex items-center w-full space-x-3 px-4 py-2 rounded-r-full transition-colors hover:bg-white hover:text-blue-600"
+          className={sectionButtonClass(isTransactionActive())}
           onClick={() => setOpenTransaction(!openTransaction)}
         >
           <ArrowLeftRight className="h-5 w-5" />
@@ -58,7 +68,7 @@ const HomeSidebar = ({ onSelect }) => {
             <li>
               <a
                 href="/viewrequest"
-                className={`block p-2 rounded-md ${isActive('/viewrequest') ? 'bg-white text-[#2262C6]' : 'text-white/90 hover:bg-white hover:text-[#2262C6]'}`}
+                className={`block px-5 py-2 rounded-full ${isActive('/viewrequest') ? 'bg-white text-[#2262C6] shadow-sm' : 'text-white/90 hover:bg-white/90 hover:text-[#2262C6]'}`}
               >
                 View Request
               </a>
@@ -66,7 +76,7 @@ const HomeSidebar = ({ onSelect }) => {
             <li>
               <a
                 href="/viewapproved"
-                className={`block p-2 rounded-md ${isActive('/viewapproved') ? 'bg-white text-[#2262C6]' : 'text-white/90 hover:bg-white hover:text-[#2262C6]'}`}
+                className={`block px-5 py-2 rounded-full ${isActive('/viewapproved') ? 'bg-white text-[#2262C6] shadow-sm' : 'text-white/90 hover:bg-white/90 hover:text-[#2262C6]'}`}
               >
                 View Approved
               </a>
@@ -76,7 +86,7 @@ const HomeSidebar = ({ onSelect }) => {
 
         {/* Equipment */}
         <button
-          className="flex items-center w-full space-x-3 px-4 py-2 rounded-r-full transition-colors hover:bg-white hover:text-blue-600"
+          className={sectionButtonClass(isEquipmentActive())}
           onClick={() => setOpenEquipment(!openEquipment)}
         >
           <Folder className="h-5 w-5" />
@@ -88,7 +98,7 @@ const HomeSidebar = ({ onSelect }) => {
             <li>
               <a
                 href="/equipment"
-                className={`block p-2 rounded-md ${isActive('/equipment') ? 'bg-white text-[#2262C6]' : 'text-white/90 hover:bg-white hover:text-[#2262C6]'}`}
+                className={`block px-5 py-2 rounded-full ${isActive('/equipment') ? 'bg-white text-[#2262C6] shadow-sm' : 'text-white/90 hover:bg-white/90 hover:text-[#2262C6]'}`}
               >
                 Inventory
               </a>
@@ -96,7 +106,7 @@ const HomeSidebar = ({ onSelect }) => {
             <li>
               <a
                 href="/addstocks"
-                className={`block p-2 rounded-md ${isActive('/addstocks') ? 'bg-white text-[#2262C6]' : 'text-white/90 hover:bg-white hover:text-[#2262C6]'}`}
+                className={`block px-5 py-2 rounded-full ${isActive('/addstocks') ? 'bg-white text-[#2262C6] shadow-sm' : 'text-white/90 hover:bg-white/90 hover:text-[#2262C6]'}`}
               >
                 Add Stocks
               </a>

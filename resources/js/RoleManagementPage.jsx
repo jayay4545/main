@@ -158,18 +158,19 @@ const RoleManagementPage = () => {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-gray-50 flex">
+    <div className="flex h-screen overflow-hidden bg-white">
       {/* Sidebar */}
       <HomeSidebar />
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         <Taskbar title="John F." />
+        <main className="px-10 py-6 mb-10 flex flex-row gap-8 overflow-hidden">
         {/* Left Panel - Admin Lists */}
-        <div className="w-2/3 p-8">
+        <div className="flex-1 min-w-0">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-blue-600 mb-2">Role Management</h1>
-            <p className="text-gray-500">Admin Lists</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-blue-600">Role Management</h1>
+            <p className="text-sm text-gray-500 mt-2">Admin Lists</p>
           </div>
           
           {/* Table Headers */}
@@ -184,41 +185,15 @@ const RoleManagementPage = () => {
               <div
                 key={admin.id}
                 onClick={() => setSelectedAdmin(admin)}
-                className={`p-4 rounded-lg cursor-pointer transition-all duration-200 ${
+                className={`p-4 rounded-xl cursor-pointer transition-all duration-200 border ${
                   selectedAdmin.id === admin.id
-                    ? 'bg-blue-50 border-2 border-blue-200 shadow-md'
-                    : 'bg-gray-100 hover:bg-gray-200'
+                    ? 'bg-blue-50 border-blue-200 shadow'
+                    : 'bg-white border-gray-200 hover:shadow'
                 }`}
               >
-                <div className="flex justify-between items-center">
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">{admin.name}</div>
-                  </div>
-                  <div className="flex-1 text-right">
-                    <div className="text-gray-600">{admin.position}</div>
-                  </div>
-                  <div className="ml-4 flex space-x-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEditModal(admin);
-                      }}
-                      className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
-                      title="Edit"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openDeleteModal(admin);
-                      }}
-                      className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
+                <div className="grid grid-cols-2 items-center">
+                  <div className="font-medium text-gray-900 truncate">{admin.name}</div>
+                  <div className="text-right text-gray-600 uppercase text-xs tracking-wide">{admin.position}</div>
                 </div>
               </div>
             ))}
@@ -227,7 +202,7 @@ const RoleManagementPage = () => {
           {/* Add Admin Button */}
           <button
             onClick={() => setShowAddModal(true)}
-            className="mt-6 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="mt-6 inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Admin
@@ -235,15 +210,19 @@ const RoleManagementPage = () => {
         </div>
         
         {/* Right Panel - Admin Details */}
-        <div className="w-1/3 p-8">
-          <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="w-full max-w-xs">
+          <div className="bg-white rounded-xl shadow p-6 border border-gray-200">
             {/* Profile Section */}
             <div className="text-center mb-6">
-              <div className="w-20 h-20 bg-gray-300 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-2xl font-bold text-gray-600">
-                  {selectedAdmin.name.split(' ').map(n => n[0]).join('')}
-                </span>
-              </div>
+              {selectedAdmin.profileImage ? (
+                <img src={selectedAdmin.profileImage} alt={selectedAdmin.name} className="w-20 h-20 rounded-full mx-auto mb-3 object-cover" />
+              ) : (
+                <div className="w-20 h-20 bg-gray-300 rounded-full mx-auto mb-3 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-gray-600">
+                    {selectedAdmin.name.split(' ').map(n => n[0]).join('')}
+                  </span>
+                </div>
+              )}
               <h3 className="text-lg font-bold text-gray-900">{selectedAdmin.name}</h3>
               <p className="text-gray-500">{selectedAdmin.position}</p>
             </div>
@@ -271,7 +250,7 @@ const RoleManagementPage = () => {
             {/* Save Button */}
             <button
               onClick={handleSaveAccessTools}
-              className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
             >
               <Save className="h-4 w-4 mr-2" />
               Save
@@ -279,6 +258,7 @@ const RoleManagementPage = () => {
             </button>
           </div>
         </div>
+        </main>
       </div>
 
       {/* Add Admin Modal */}
