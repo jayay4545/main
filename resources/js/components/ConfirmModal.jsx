@@ -14,6 +14,12 @@ const ConfirmModal = ({
   if (!isOpen) return null;
 
   const handleConfirm = () => {
+    // Validate required fields for release
+    if (type === 'release' && !condition.trim()) {
+      alert('Equipment condition is required before releasing equipment.');
+      return;
+    }
+
     const data = {
       ...transactionData, // Include all original transaction data
       notes: notes.trim() || null,
@@ -105,7 +111,7 @@ const ConfirmModal = ({
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Equipment Condition
+                  Equipment Condition <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -113,6 +119,7 @@ const ConfirmModal = ({
                   onChange={(e) => setCondition(e.target.value)}
                   placeholder="e.g., Good, Excellent, Minor scratches"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
                 />
               </div>
               <div>

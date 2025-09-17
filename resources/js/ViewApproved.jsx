@@ -53,14 +53,14 @@ const ViewApproved = () => {
         setApproved(approvedResponse.data);
       }
       
-      // Fetch current holders (status = 'completed' - equipment released)
-      const holdersResponse = await transactionService.getAll({ status: 'completed' });
+      // Fetch current holders (status = 'released' - equipment released)
+      const holdersResponse = await transactionService.getAll({ status: 'released' });
       if (holdersResponse.success) {
         setCurrentHolders(holdersResponse.data);
       }
       
-      // Fetch verify returns (status = 'overdue' - equipment returned)
-      const returnsResponse = await transactionService.getAll({ status: 'overdue' });
+      // Fetch verify returns (status = 'returned' - equipment returned)
+      const returnsResponse = await transactionService.getAll({ status: 'returned' });
       if (returnsResponse.success) {
         setVerifyReturns(returnsResponse.data);
       }
@@ -100,17 +100,13 @@ const ViewApproved = () => {
         // Close modal
         setConfirmModal({ isOpen: false, type: null, transactionData: null });
         
-        // Automatically trigger print functionality for accountability form
-        setTimeout(() => {
-          handlePrint(transactionData);
-        }, 500); // Small delay to ensure modal is closed
-        
         // Show success message
-        alert('Equipment released successfully! Accountability form will be printed.');
+        alert('Equipment released successfully!');
       }
     } catch (err) {
       console.error('Error releasing equipment:', err);
-      alert('Error releasing equipment: ' + apiUtils.handleError(err));
+      const errorMessage = err.response?.data?.message || err.message || 'Unknown error occurred';
+      alert('Error releasing equipment: ' + errorMessage);
     }
   };
 
@@ -299,21 +295,41 @@ const ViewApproved = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {approved.map((row) => (
-                    <tr key={row.id} className="border-b last:border-0">
-                      <td className="py-4">{row.name}</td>
-                      <td className="py-4">{row.position}</td>
-                      <td className="py-4">{row.item}</td>
-                      <td className="py-4">{row.id % 2 ? 'W.F.H' : 'Onsite'}</td>
-                      <td className="py-4 text-red-600">10/08/25</td>
-                      <td className="py-4">
-                        <div className="flex items-center justify-end space-x-4 text-gray-700">
-                          <span className="px-3 py-1 rounded-full text-xs bg-green-100 text-green-700">Partial</span>
-                          <span className="px-3 py-1 rounded-full text-xs bg-green-600 text-white">Returned</span>
-                        </div>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="6" className="py-8 text-center text-gray-500">
+                        Loading current holders...
                       </td>
                     </tr>
-                  ))}
+                  ) : error ? (
+                    <tr>
+                      <td colSpan="6" className="py-8 text-center text-red-500">
+                        Error: {error}
+                      </td>
+                    </tr>
+                  ) : currentHolders.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="py-8 text-center text-gray-500">
+                        No current holders found
+                      </td>
+                    </tr>
+                  ) : (
+                    currentHolders.map((row) => (
+                      <tr key={row.id} className="border-b last:border-0">
+                        <td className="py-4">{row.full_name}</td>
+                        <td className="py-4">{row.position}</td>
+                        <td className="py-4">{row.equipment_name}</td>
+                        <td className="py-4">{row.request_mode || 'Onsite'}</td>
+                        <td className="py-4 text-red-600">{row.expected_return_date || 'N/A'}</td>
+                        <td className="py-4">
+                          <div className="flex items-center justify-end space-x-4 text-gray-700">
+                            <span className="px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-700">Active</span>
+                            <span className="px-3 py-1 rounded-full text-xs bg-green-600 text-white">Released</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -335,20 +351,40 @@ const ViewApproved = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {approved.map((row) => (
-                    <tr key={row.id} className="border-b last:border-0">
-                      <td className="py-4">{row.name}</td>
-                      <td className="py-4">{row.position}</td>
-                      <td className="py-4">{row.item}</td>
-                      <td className="py-4 text-red-600">10/08/25</td>
-                      <td className="py-4">
-                        <div className="flex items-center justify-end space-x-3">
-                          <span className="px-3 py-1 rounded-full text-xs bg-green-100 text-green-700">Partial</span>
-                          <span className="px-3 py-1 rounded-full text-xs bg-green-600 text-white">Returned</span>
-                        </div>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="5" className="py-8 text-center text-gray-500">
+                        Loading verify returns...
                       </td>
                     </tr>
-                  ))}
+                  ) : error ? (
+                    <tr>
+                      <td colSpan="5" className="py-8 text-center text-red-500">
+                        Error: {error}
+                      </td>
+                    </tr>
+                  ) : verifyReturns.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="py-8 text-center text-gray-500">
+                        No returns to verify found
+                      </td>
+                    </tr>
+                  ) : (
+                    verifyReturns.map((row) => (
+                      <tr key={row.id} className="border-b last:border-0">
+                        <td className="py-4">{row.full_name}</td>
+                        <td className="py-4">{row.position}</td>
+                        <td className="py-4">{row.equipment_name}</td>
+                        <td className="py-4 text-red-600">{row.return_date || row.expected_return_date || 'N/A'}</td>
+                        <td className="py-4">
+                          <div className="flex items-center justify-end space-x-3">
+                            <span className="px-3 py-1 rounded-full text-xs bg-yellow-100 text-yellow-700">Pending</span>
+                            <span className="px-3 py-1 rounded-full text-xs bg-green-600 text-white">Returned</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
