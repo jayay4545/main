@@ -13,11 +13,10 @@ return new class extends Migration
     {
         Schema::create('requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // User who created the request
-            $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade'); // Employee for whom the request is made
-            $table->foreignId('equipment_id')->constrained('equipments')->onDelete('cascade'); // Equipment requested
+            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Employee making request
+            $table->foreignId('equipment_id')->constrained()->onDelete('cascade'); // Equipment requested
             $table->enum('request_type', ['borrow', 'permanent_assignment', 'maintenance'])->default('borrow');
-            $table->enum('request_mode', ['Onsite', 'W.F.H', 'Hybrid'])->default('Onsite'); // Work mode - updated to match UI
+            $table->enum('request_mode', ['onsite', 'wfh', 'hybrid'])->default('onsite'); // Work mode
             $table->text('reason')->nullable(); // Reason for request
             $table->date('start_date')->nullable(); // When equipment is needed
             $table->date('end_date')->nullable(); // When equipment should be returned

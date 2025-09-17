@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('equipments', function (Blueprint $table) {
+        Schema::table('equipment', function (Blueprint $table) {
             $table->foreign('category_id')->references('id')->on('equipment_categories')->onDelete('set null');
         });
     }
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('equipments', function (Blueprint $table) {
+        Schema::table('equipment', function (Blueprint $table) {
             $table->dropForeign(['category_id']);
         });
     }

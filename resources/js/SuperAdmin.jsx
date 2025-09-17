@@ -1,144 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import api from './services/api';
-import { Search, Printer, Check, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Printer, Eye, Folder, User, Clock, ChevronDown, ChevronUp, FileText, Home, Check, X, Pencil } from 'lucide-react';
 import VerificationModal from './components/VerificationModal';
-import Sidebar from './components/Sidebar';
-
-const SuperAdmin = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [transactions, setTransactions] = useState([]);
-  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
-  const [verificationStatus, setVerificationStatus] = useState('pending');
-
-  useEffect(() => {
-    fetchTransactions();
-  }, []);
-
-  const fetchTransactions = async () => {
-    try {
-      const response = await api.get('/api/transactions');
-      if (response.data) {
-        setTransactions(response.data);
-      }
-    } catch (err) {
-      console.error('Error fetching transactions:', err);
-    }
-  };
-
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const handleVerificationClick = (id) => {
-    setSelectedId(id);
-    setIsVerificationModalOpen(true);
-  };
-
-  const handleVerification = async (status) => {
-    try {
-      await api.put(`/api/transactions/${selectedId}/verify`, { status });
-      setVerificationStatus(status);
-      setIsVerificationModalOpen(false);
-      fetchTransactions();
-    } catch (err) {
-      console.error('Error updating verification status:', err);
-    }
-  };
-
-  const filteredTransactions = transactions.filter(transaction => {
-    return transaction.id.toString().includes(searchTerm) ||
-           transaction.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           transaction.type.toLowerCase().includes(searchTerm.toLowerCase());
-  });
-
-  return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col">
-        <header className="flex items-center justify-between px-6 py-4 bg-white">
-          <div className="flex-1 max-w-lg ml-9 mt-2">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search transactions..."
-                className="w-full pl-10 pr-4 py-2 border rounded-lg"
-                value={searchTerm}
-                onChange={handleSearch}
-              />
-              <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg">
-              <Printer className="h-5 w-5" />
-              <span>Print Report</span>
-            </button>
-          </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b">
-              <h2 className="text-lg font-semibold">Recent Transactions</h2>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredTransactions.map((transaction) => (
-                    <tr key={transaction.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">{transaction.id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{transaction.date}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{transaction.type}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                          ${transaction.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            transaction.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'}`}>
-                          {transaction.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <button
-                          onClick={() => handleVerificationClick(transaction.id)}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Verify
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </main>
-      </div>
-
-      {isVerificationModalOpen && (
-        <VerificationModal
-          isOpen={isVerificationModalOpen}
-          onClose={() => setIsVerificationModalOpen(false)}
-          onVerify={handleVerification}
-        />
-      )}
-    </div>
-  );
-};
-
-export default SuperAdmin;
 
 const SuperAdmin = () => {
   const [activeMenu, setActiveMenu] = useState('Home');
@@ -155,52 +17,20 @@ const SuperAdmin = () => {
     reason: ''
   });
 
-  const [pendingRequests, setPendingRequests] = useState([]);
-  const [approvedRequests, setApprovedRequests] = useState([]);
-  const [currentHolders, setCurrentHolders] = useState([]);
-  const [verifyReturns, setVerifyReturns] = useState([]);
-
-  useEffect(() => {
-function SuperAdmin() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [transactions, setTransactions] = useState([]);
-  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
-  const [verificationStatus, setVerificationStatus] = useState('pending');
-
-  useEffect(() => {
-    fetchTransactions();
-  }, []);
-
-  const fetchTransactions = async () => {
-    try {
-      const response = await api.get('/api/transactions');
-      if (response.data) {
-        setTransactions(response.data);
-      }
-    } catch (err) {
-      console.error('Error fetching transactions:', err);
-    }
-  };    fetchTransactions();
-  }, []);
-            categoryName: transaction.category_name,
-            brand: transaction.brand,
-            model: transaction.model
-          }));
-          
-          // Filter transactions by status
-          setPendingRequests(mappedTransactions.filter(t => t.status === 'pending'));
-          setApprovedRequests(mappedTransactions.filter(t => t.status === 'released'));
-          setCurrentHolders(mappedTransactions.filter(t => t.status === 'released'));
-          setVerifyReturns(mappedTransactions.filter(t => t.status === 'returned' || t.status === 'lost' || t.status === 'damaged'));
-        }
-      } catch (err) {
-        console.error('Error fetching transactions:', err);
-      }
-    };
-
-    fetchTransactions();
-  }, []);
+  const [pendingRequests, setPendingRequests] = useState([
+    { id: 1, name: "John Paul Francisco", position: "NOC tier 1", item: "Dell Laptop + 24\" Monitor", status: "Pending", approvedBy: "Ms. France", requestDate: "2024-01-15" },
+    { id: 2, name: "Kyle Dela Cruz", position: "NOC tier 1", item: "MacBook Pro + Magic Mouse", status: "Pending", approvedBy: "Ms. Jewel", requestDate: "2024-01-16" },
+    { id: 3, name: "Rica Alorro", position: "NOC tier 1", item: "HP Laptop + External Keyboard", status: "Pending", approvedBy: "Ms. France", requestDate: "2024-01-17" },
+    { id: 4, name: "Carlo Divino", position: "NOC tier 1", item: "Lenovo ThinkPad + Webcam", status: "Pending", approvedBy: "Ms. France", requestDate: "2024-01-18" },
+    { id: 5, name: "Maria Santos", position: "Software Developer", item: "Gaming Chair + Standing Desk", status: "Pending", approvedBy: "Mr. Johnson", requestDate: "2024-01-19" },
+    { id: 6, name: "David Kim", position: "UI/UX Designer", item: "Wacom Tablet + 4K Monitor", status: "Pending", approvedBy: "Ms. Smith", requestDate: "2024-01-20" },
+    { id: 7, name: "Sarah Johnson", position: "Project Manager", item: "Noise Cancelling Headphones", status: "Pending", approvedBy: "Mr. Brown", requestDate: "2024-01-21" },
+  ]);
+  const [approvedRequests, setApprovedRequests] = useState([
+    { id: 101, name: "Alex Thompson", position: "Senior Developer", item: "Dell XPS 15 + Dual Monitors", status: "Approved", approvedBy: "John F.", approvedAt: "2024-01-10" },
+    { id: 102, name: "Lisa Chen", position: "Data Analyst", item: "MacBook Air + iPad Pro", status: "Approved", approvedBy: "John F.", approvedAt: "2024-01-12" },
+    { id: 103, name: "Michael Rodriguez", position: "DevOps Engineer", item: "Mechanical Keyboard + Mouse", status: "Approved", approvedBy: "John F.", approvedAt: "2024-01-14" },
+  ]);
 
   const menuItems = [
     { icon: Home, label: 'Home' },
@@ -290,12 +120,56 @@ function SuperAdmin() {
     setModalState(prev => ({ ...prev, reason }));
   };
 
-  // ...existing code...
+  const currentHolders = [
+    { id: 1, name: "John Paul Francisco", position: "NOC tier 1", item: "Laptop, Monitor, etc", requestMode: "W.F.H", endDate: "10/08/25" },
+    { id: 2, name: "Kyle Dela Cruz", position: "NOC tier 1", item: "Laptop, Monitor, etc", requestMode: "Onsite", endDate: "15/08/25" },
+    { id: 3, name: "Rica Alorro", position: "NOC tier 1", item: "Laptop, Monitor, etc", requestMode: "W.F.H", endDate: "12/08/25" },
+    { id: 4, name: "Carlo Divino", position: "NOC tier 1", item: "Laptop, Monitor, etc", requestMode: "Onsite", endDate: "18/08/25" },
+  ];
+
+  const verifyReturns = [
+    { id: 1, name: "John Paul Francisco", position: "NOC tier 1", item: "Laptop, Monitor, etc", endDate: "10/08/25", status: "Partial" },
+    { id: 2, name: "Kyle Dela Cruz", position: "NOC tier 1", item: "Laptop, Monitor, etc", endDate: "15/08/25", status: "Returned" },
+    { id: 3, name: "Rica Alorro", position: "NOC tier 1", item: "Laptop, Monitor, etc", endDate: "12/08/25", status: "Partial" },
+    { id: 4, name: "Carlo Divino", position: "NOC tier 1", item: "Laptop, Monitor, etc", endDate: "18/08/25", status: "Returned" },
+  ];
 
   
   return (
     <div className="min-h-screen bg-white-100 flex">
-      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
+      {/* Sidebar Wrapper */}
+      <div className="flex flex-col">
+        {/* Logo */}
+        <div className="flex items-center space-x-3">
+          <img
+            src="/images/Frame_89-removebg-preview.png"
+            alt="iREPLY Logo"
+            className="h-20 ml-4 w-auto object-contain"
+            onError={(e) => {
+              console.log('Image failed to load, trying fallback path');
+              e.target.onerror = null;
+              // Try multiple fallback paths
+              e.target.src = '/images/Frame 35.jpg';
+              // If that fails too, set another fallback
+              e.target.onerror = () => {
+                console.log('Fallback image also failed, using text fallback');
+                e.target.onerror = null;
+                // Replace with a div containing the text
+                const parent = e.target.parentNode;
+                if (parent) {
+                  const textNode = document.createElement('div');
+                  textNode.className = 'h-20 ml-4 flex items-center justify-center';
+                  textNode.innerHTML = '<span class="text-white font-bold text-xl">iREPLY</span>';
+                  parent.replaceChild(textNode, e.target);
+                }
+              };
+            }}
+          />
+        </div>
+
+        {/* Sidebar */}
+        <aside className="w-60 bg-blue-600 min-h-full relative overflow-hidden rounded-tr-[60px] flex flex-col">
+          <nav className="mt-8 space-y-2">
             {menuItems.map((item, index) => (
               <div key={index}>
                 {/* Main Menu Button */}
@@ -477,7 +351,7 @@ function SuperAdmin() {
             <div className="bg-gray-100 rounded-2xl p-6 shadow flex flex-col">
               <h4 className="text-sm font-semibold text-gray-600">Verify Return</h4>
               <div className="mt-4 flex items-center justify-between">
-                <p className="text-4xl font-bold text-gray-900">{verifyReturns.length}</p>
+                <p className="text-4xl font-bold text-gray-900">6</p>
                 <div className="w-10 h-10 rounded-full bg-gray-300"></div>
               </div>
             </div>
@@ -692,10 +566,8 @@ function SuperAdmin() {
                           <div className="text-gray-500 text-xs">{req.position}</div>
                         </td>
                         <td className="py-4 text-gray-700">{req.item}</td>
-                        <td className="py-4 text-gray-700">{req.requestMode === 'work_from_home' ? 'W.F.H' : 'Onsite'}</td>
-                        <td className="py-4 text-red-600">
-                          {req.expectedReturnDate ? new Date(req.expectedReturnDate).toLocaleDateString() : 'N/A'}
-                        </td>
+                        <td className="py-4 text-gray-700">{req.requestMode}</td>
+                        <td className="py-4 text-red-600">{req.endDate}</td>
                         <td className="py-4">
                           <div className="flex items-center justify-end space-x-4 text-gray-700">
                             <Eye className="h-5 w-5" />
@@ -733,22 +605,11 @@ function SuperAdmin() {
                           <div className="text-gray-500 text-xs">{req.position}</div>
                         </td>
                         <td className="py-4 text-gray-700">{req.item}</td>
-                        <td className="py-4 text-red-600">
-                          {req.expectedReturnDate ? new Date(req.expectedReturnDate).toLocaleDateString() : 'N/A'}
-                        </td>
+                        <td className="py-4 text-red-600">{req.endDate}</td>
                         <td className="py-4">
                           <div className="flex items-center justify-end space-x-3">
-                            <span className={`px-3 py-1 rounded-full text-xs ${
-                              req.status === 'returned' 
-                                ? 'bg-green-100 text-green-700' 
-                                : req.status === 'lost'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-yellow-100 text-yellow-700'
-                            }`}>
-                              {req.status === 'returned' ? 'Returned' : 
-                               req.status === 'lost' ? 'Lost' : 
-                               req.status === 'damaged' ? 'Damaged' : req.status}
-                            </span>
+                            <span className="px-3 py-1 rounded-full text-xs bg-green-100 text-green-700">Partial</span>
+                            <span className="px-3 py-1 rounded-full text-xs bg-green-600 text-white">Returned</span>
                           </div>
                         </td>
                       </tr>

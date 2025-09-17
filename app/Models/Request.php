@@ -10,7 +10,6 @@ class Request extends Model
 {
     protected $fillable = [
         'user_id',
-        'employee_id',
         'equipment_id',
         'request_type',
         'request_mode',

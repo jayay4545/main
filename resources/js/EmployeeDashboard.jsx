@@ -4,7 +4,6 @@ const EmployeeDashboard = () => {
   const [employees, setEmployees] = useState([]);
   const [currentHolders, setCurrentHolders] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
-  const [approvedRequests, setApprovedRequests] = useState([]);
   const [verifyReturns, setVerifyReturns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,26 +20,23 @@ const EmployeeDashboard = () => {
       setLoading(true);
       
       // Fetch all data in parallel
-      const [employeesRes, currentHoldersRes, pendingRequestsRes, approvedRequestsRes, verifyReturnsRes] = await Promise.all([
+      const [employeesRes, currentHoldersRes, pendingRequestsRes, verifyReturnsRes] = await Promise.all([
         fetch(`${API_BASE}/employees`),
         fetch(`${API_BASE}/employees/current-holders`),
         fetch(`${API_BASE}/employees/pending-requests`),
-        fetch(`${API_BASE}/employees/approved-requests`),
         fetch(`${API_BASE}/employees/verify-returns`)
       ]);
 
-      const [employeesData, currentHoldersData, pendingRequestsData, approvedRequestsData, verifyReturnsData] = await Promise.all([
+      const [employeesData, currentHoldersData, pendingRequestsData, verifyReturnsData] = await Promise.all([
         employeesRes.json(),
         currentHoldersRes.json(),
         pendingRequestsRes.json(),
-        approvedRequestsRes.json(),
         verifyReturnsRes.json()
       ]);
 
       if (employeesData.success) setEmployees(employeesData.data);
       if (currentHoldersData.success) setCurrentHolders(currentHoldersData.data);
       if (pendingRequestsData.success) setPendingRequests(pendingRequestsData.data);
-      if (approvedRequestsData.success) setApprovedRequests(approvedRequestsData.data);
       if (verifyReturnsData.success) setVerifyReturns(verifyReturnsData.data);
 
     } catch (err) {
@@ -145,43 +141,6 @@ const EmployeeDashboard = () => {
                   <td>
                     <button className="action-btn approve">✓</button>
                     <button className="action-btn reject">✗</button>
-                    <button className="action-btn print">🖨️</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Approved Requests Section */}
-      <div className="section">
-        <h2>View Approved ({approvedRequests.length})</h2>
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Position</th>
-                <th>Item</th>
-                <th>Approved Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {approvedRequests.map(request => (
-                <tr key={request.request_id}>
-                  <td>
-                    <div>
-                      <strong>{request.first_name} {request.last_name}</strong>
-                      <br />
-                      <small>{request.position}</small>
-                    </div>
-                  </td>
-                  <td>{request.equipment_name}</td>
-                  <td className="end-date">{formatDate(request.approved_at)}</td>
-                  <td>
-                    <button className="action-btn view">👁️</button>
                     <button className="action-btn print">🖨️</button>
                   </td>
                 </tr>

@@ -19,14 +19,14 @@ class TransactionController extends Controller
                 ->where('status', 'pending')
                 ->count();
 
-            // Count current holders (released transactions)
+            // Count current holders (completed transactions)
             $currentHolders = DB::table('transactions')
-                ->where('status', 'released')
+                ->where('status', 'completed')
                 ->count();
 
-            // Count verify returns (returned transactions)
+            // Count verify returns (overdue transactions)
             $verifyReturns = DB::table('transactions')
-                ->where('status', 'returned')
+                ->where('status', 'overdue')
                 ->count();
 
             return response()->json([
@@ -104,7 +104,7 @@ class TransactionController extends Controller
                 'employee_id' => 'required|exists:employees,id',
                 'equipment_id' => 'required|exists:equipments,id',
                 'transaction_number' => 'required|string|unique:transactions,transaction_number',
-                'request_mode' => 'required|in:work_from_home,on_site',
+                'request_mode' => 'required|in:work_from_home,onsite',
                 'expected_return_date' => 'required|date',
                 'status' => 'sometimes|in:pending,active,released,returned,lost,damaged',
             ]);
@@ -116,14 +116,13 @@ class TransactionController extends Controller
             $transactionId = DB::table('transactions')->insertGetId($validatedData);
 
             $transaction = DB::table('transactions')
-                ->join('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
+                ->leftJoin('employees', 'transactions.employee_id', '=', 'employees.id')
+                ->leftJoin('equipments', 'transactions.equipment_id', '=', 'equipments.id')
                 ->where('transactions.id', $transactionId)
                 ->select(
                     'transactions.*',
-                    'employees.first_name',
-                    'employees.last_name',
-                    'equipments.name as equipment_name'
+                    DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
+                    DB::raw("COALESCE(equipments.name, '') as equipment_name")
                 )
                 ->first();
 
@@ -153,8 +152,8 @@ class TransactionController extends Controller
     {
         try {
             $transaction = DB::table('transactions')
-                ->join('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
+                ->leftJoin('employees', 'transactions.employee_id', '=', 'employees.id')
+                ->leftJoin('equipments', 'transactions.equipment_id', '=', 'equipments.id')
                 ->leftJoin('equipment_categories', 'equipments.category_id', '=', 'equipment_categories.id')
                 ->where('transactions.id', $id)
                 ->select(
@@ -208,13 +207,8 @@ class TransactionController extends Controller
                 'status' => 'sometimes|in:pending,active,released,returned,lost,damaged',
                 'expected_return_date' => 'sometimes|date',
                 'return_date' => 'sometimes|date',
-                'release_date' => 'sometimes|date',
-                'return_condition' => 'sometimes|in:good_condition,brand_new,damaged',
-                'release_condition' => 'sometimes|in:good_condition,brand_new,damaged',
-                'release_notes' => 'sometimes|string',
-                'return_notes' => 'sometimes|string',
-                'received_by' => 'sometimes|nullable|exists:users,id',
-                'released_by' => 'sometimes|nullable|exists:users,id',
+                'return_condition' => 'sometimes|string',
+                'notes' => 'sometimes|string',
             ]);
 
             $validatedData['updated_at'] = now();
@@ -222,14 +216,13 @@ class TransactionController extends Controller
             DB::table('transactions')->where('id', $id)->update($validatedData);
 
             $updatedTransaction = DB::table('transactions')
-                ->join('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
+                ->leftJoin('employees', 'transactions.employee_id', '=', 'employees.id')
+                ->leftJoin('equipments', 'transactions.equipment_id', '=', 'equipments.id')
                 ->where('transactions.id', $id)
                 ->select(
                     'transactions.*',
-                    'employees.first_name',
-                    'employees.last_name',
-                    'equipments.name as equipment_name'
+                    DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
+                    DB::raw("COALESCE(equipments.name, '') as equipment_name")
                 )
                 ->first();
 
@@ -296,7 +289,7 @@ class TransactionController extends Controller
                 ], 404);
             }
 
-            if ($transaction->status === 'released') {
+            if ($transaction->status === 'completed') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Transaction is already released'
@@ -313,8 +306,8 @@ class TransactionController extends Controller
             ]);
 
             $updateData = [
-                'status' => 'released',
-                'release_date' => $validatedData['release_date'] ?? now()->toDateString(),
+                'status' => 'completed',
+                'issued_at' => now(),
                 'updated_at' => now(),
             ];
 
@@ -393,9 +386,9 @@ class TransactionController extends Controller
     {
         try {
             $transaction = DB::table('transactions')
-                ->join('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
-                ->leftJoin('users as approved_by_user', 'transactions.released_by', '=', 'approved_by_user.id')
+                ->leftJoin('employees', 'transactions.employee_id', '=', 'employees.id')
+                ->leftJoin('equipments', 'transactions.equipment_id', '=', 'equipments.id')
+                ->leftJoin('users as approved_by_user', 'transactions.processed_by', '=', 'approved_by_user.id')
                 ->where('transactions.id', $id)
                 ->select(
                     'transactions.*',

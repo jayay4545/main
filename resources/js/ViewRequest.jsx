@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Search, Printer, Check, X, ChevronDown, Eye, Pencil } from 'lucide-react';
 import Taskbar from './components/Taskbar.jsx';
 import HomeSidebar from './HomeSidebar';
@@ -10,66 +10,23 @@ import EditTransactionModal from './components/EditTransactionModal';
 import api from './services/api';
 
 const ViewRequest = () => {
-  const [pendingRequests, setPendingRequests] = useState([]);
-  const [approvedRequests, setApprovedRequests] = useState([]);
-  const [currentHolders, setCurrentHolders] = useState([]);
-  const [verifyReturns, setVerifyReturns] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [pendingRequests, setPendingRequests] = useState([
+    { id: 1, name: 'John Paul Francisco', position: 'NOC tier 1', item: 'Dell Laptop + 24" Monitor', requestDate: '2024-01-15' },
+    { id: 2, name: 'Kyle Dela Cruz', position: 'NOC tier 1', item: 'MacBook Pro + Magic Mouse', requestDate: '2024-01-16' },
+    { id: 3, name: 'Rica Alorro', position: 'NOC tier 1', item: 'HP Laptop + External Keyboard', requestDate: '2024-01-17' },
+    { id: 4, name: 'Carlo Divino', position: 'NOC tier 1', item: 'Lenovo ThinkPad + Webcam', requestDate: '2024-01-18' },
+    { id: 5, name: 'Maria Santos', position: 'Software Developer', item: 'Gaming Chair + Standing Desk', requestDate: '2024-01-19' },
+    { id: 6, name: 'David Kim', position: 'UI/UX Designer', item: 'Wacom Tablet + 4K Monitor', requestDate: '2024-01-20' },
+  ]);
+
+  const [approvedRequests, setApprovedRequests] = useState([
+    { id: 101, name: 'Alex Thompson', position: 'Senior Developer', item: 'Dell XPS 15 + Dual Monitors', status: 'Approved', approvedBy: 'John F.', approvedAt: '2024-01-10' },
+    { id: 102, name: 'Lisa Chen', position: 'Data Analyst', item: 'MacBook Air + iPad Pro', status: 'Approved', approvedBy: 'John F.', approvedAt: '2024-01-12' },
+  ]);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [view, setView] = useState('viewRequest');
-  
-  // Fetch transaction data from API
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const response = await api.get('/transactions');
-        
-        if (response.data && response.data.success && Array.isArray(response.data.data)) {
-          const transactions = response.data.data;
-          
-          // Map database fields to display format
-          const mappedTransactions = transactions.map(transaction => ({
-            id: transaction.id,
-            name: `${transaction.first_name} ${transaction.last_name}`,
-            position: transaction.position,
-            item: transaction.equipment_name,
-            requestDate: new Date(transaction.created_at).toLocaleDateString(),
-            status: transaction.status,
-            requestMode: transaction.request_mode,
-            expectedReturnDate: transaction.expected_return_date,
-            releaseDate: transaction.release_date,
-            returnDate: transaction.return_date,
-            releaseCondition: transaction.release_condition,
-            returnCondition: transaction.return_condition,
-            releaseNotes: transaction.release_notes,
-            returnNotes: transaction.return_notes,
-            transactionNumber: transaction.transaction_number,
-            categoryName: transaction.category_name,
-            brand: transaction.brand,
-            model: transaction.model
-          }));
-          
-          // Filter transactions by status
-          setPendingRequests(mappedTransactions.filter(t => t.status === 'pending'));
-          setApprovedRequests(mappedTransactions.filter(t => t.status === 'released'));
-          setCurrentHolders(mappedTransactions.filter(t => t.status === 'released'));
-          setVerifyReturns(mappedTransactions.filter(t => t.status === 'returned' || t.status === 'lost' || t.status === 'damaged'));
-        }
-      } catch (err) {
-        console.error('Error fetching transactions:', err);
-        setError('Failed to load transaction data. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTransactions();
-  }, []);
+  const [currentHolders, setCurrentHolders] = useState([]);
   
   // Modal state
   const [modalState, setModalState] = useState({
@@ -235,6 +192,42 @@ const ViewRequest = () => {
     );
   };
 
+  // Fetch transactions for Current holder view
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const response = await api.get('/transactions');
+        const rows = Array.isArray(response.data?.data) ? response.data.data : [];
+        const mapped = rows.map((t) => ({
+          id: t.id,
+          name: t.full_name || t.name || '',
+          position: t.position || '',
+          item: t.equipment_name || t.item || '',
+          requestMode: t.request_mode || 'onsite',
+          requestDate: t.created_at,
+          transactionNumber: t.transaction_number || null,
+          status: t.status || 'pending',
+          expectedReturnDate: t.expected_return_date || null,
+          releaseDate: t.issued_at || null,
+          returnDate: t.returned_at || null,
+          releaseCondition: t.release_condition || t.condition_on_issue || null,
+          returnCondition: t.return_condition || t.condition_on_return || null,
+          releaseNotes: t.release_notes || t.notes || '',
+          returnNotes: t.return_notes || '',
+          brand: t.brand || null,
+          model: t.model || null,
+          categoryName: t.category_name || null,
+        }));
+        setCurrentHolders(mapped);
+      } catch (e) {
+        console.error('Failed to load transactions', e);
+        setCurrentHolders([]);
+      }
+    };
+
+    fetchTransactions();
+  }, []);
+
   // Success modal handlers
   const handleSuccessModalClose = () => {
     setSuccessModal({
@@ -259,21 +252,21 @@ const ViewRequest = () => {
           <div className="bg-blue-600 text-white rounded-2xl p-6 shadow flex flex-col">
             <h4 className="text-sm uppercase tracking-wider opacity-80">New Requests</h4>
             <div className="mt-4 flex items-center justify-between">
-              <p className="text-5xl font-bold">{loading ? '...' : pendingRequests.length}</p>
+              <p className="text-5xl font-bold">{pendingRequests.length}</p>
               <div className="w-10 h-10 rounded-full bg-white/30"></div>
             </div>
           </div>
           <div className="bg-gray-100 rounded-2xl p-6 shadow flex flex-col">
-            <h4 className="text-sm font-semibold text-gray-600">Current Holders</h4>
+            <h4 className="text-sm font-semibold text-gray-600">Approved Requests</h4>
             <div className="mt-4 flex items-center justify-between">
-              <p className="text-4xl font-bold text-gray-900">{loading ? '...' : currentHolders.length}</p>
+              <p className="text-4xl font-bold text-gray-900">{approvedRequests.length}</p>
               <div className="w-10 h-10 rounded-full bg-gray-300"></div>
             </div>
           </div>
           <div className="bg-gray-100 rounded-2xl p-6 shadow flex flex-col">
             <h4 className="text-sm font-semibold text-gray-600">Verify Return</h4>
             <div className="mt-4 flex items-center justify-between">
-              <p className="text-4xl font-bold text-gray-900">{loading ? '...' : verifyReturns.length}</p>
+              <p className="text-4xl font-bold text-gray-900">6</p>
               <div className="w-10 h-10 rounded-full bg-gray-300"></div>
             </div>
           </div>
@@ -308,33 +301,17 @@ const ViewRequest = () => {
           <>
             <h3 className="mt-10 text-3xl font-semibold text-gray-700">View Request</h3>
             <div className="mt-4 bg-white rounded-xl shadow p-6">
-              {loading ? (
-                <div className="flex justify-center items-center h-32">
-                  <div className="text-gray-500">Loading transactions...</div>
-                </div>
-              ) : error ? (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-800">{error}</p>
-                </div>
-              ) : (
-                <table className="w-full text-sm text-left">
-                  <thead>
-                    <tr className="border-b text-gray-600">
-                      <th className="pb-2">Name</th>
-                      <th className="pb-2">Item</th>
-                      <th className="pb-2">Request Date</th>
-                      <th className="pb-2 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pendingRequests.length === 0 ? (
-                      <tr>
-                        <td colSpan="4" className="text-center py-8 text-gray-500">
-                          No pending requests found
-                        </td>
-                      </tr>
-                    ) : (
-                      pendingRequests.map((req) => (
+              <table className="w-full text-sm text-left">
+                <thead>
+                  <tr className="border-b text-gray-600">
+                    <th className="pb-2">Name</th>
+                    <th className="pb-2">Item</th>
+                    <th className="pb-2">Request Date</th>
+                    <th className="pb-2 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingRequests.map((req) => (
                     <tr
                       key={req.id}
                       onClick={() => handleRowClick(req.id)}
@@ -374,11 +351,9 @@ const ViewRequest = () => {
                         </div>
                       </td>
                     </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              )}
+                  ))}
+                </tbody>
+              </table>
             </div>
           </>
         )}
@@ -389,69 +364,47 @@ const ViewRequest = () => {
           <>
             <h3 className="mt-10 text-3xl font-semibold text-gray-700">Current holder</h3>
             <div className="mt-4 bg-white rounded-xl shadow p-6">
-              {loading ? (
-                <div className="flex justify-center items-center h-32">
-                  <div className="text-gray-500">Loading current holders...</div>
-                </div>
-              ) : error ? (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-800">{error}</p>
-                </div>
-              ) : (
-                <table className="w-full text-sm text-left">
-                  <thead>
-                    <tr className="border-b text-gray-600">
-                      <th className="pb-2">Name</th>
-                      <th className="pb-2">Position</th>
-                      <th className="pb-2">Item</th>
-                      <th className="pb-2">Request mode</th>
-                      <th className="pb-2">End Date</th>
-                      <th className="pb-2 text-right">Actions</th>
+              <table className="w-full text-sm text-left">
+                <thead>
+                  <tr className="border-b text-gray-600">
+                    <th className="pb-2">Name</th>
+                    <th className="pb-2">Position</th>
+                    <th className="pb-2">Item</th>
+                    <th className="pb-2">Request mode</th>
+                    <th className="pb-2">End Date</th>
+                    <th className="pb-2 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentHolders.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="text-center py-8 text-gray-500">No current holders found</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {currentHolders.length === 0 ? (
-                      <tr>
-                        <td colSpan="6" className="text-center py-8 text-gray-500">
-                          No current holders found
+                  ) : (
+                    currentHolders.map((req) => (
+                      <tr key={req.id} className="border-b last:border-0">
+                        <td className="py-4">
+                          <div className="font-medium text-gray-900">{req.name}</div>
+                        </td>
+                        <td className="py-4">{req.position}</td>
+                        <td className="py-4">{req.item}</td>
+                        <td className="py-4">{req.requestMode === 'work_from_home' ? 'W.F.H' : 'Onsite'}</td>
+                        <td className="py-4 text-red-600">{req.expectedReturnDate ? new Date(req.expectedReturnDate).toLocaleDateString() : 'N/A'}</td>
+                        <td className="py-4">
+                          <div className="flex items-center justify-end space-x-4 text-gray-700">
+                            <button onClick={() => handleViewTransaction(req.id)} className="p-1 hover:bg-blue-50 rounded transition-colors" title="View Transaction Details">
+                              <Eye className="h-5 w-5 cursor-pointer hover:text-blue-600" />
+                            </button>
+                            <button onClick={() => handleEditTransaction(req.id)} className="p-1 hover:bg-blue-50 rounded transition-colors" title="Edit Transaction">
+                              <Pencil className="h-5 w-5 cursor-pointer hover:text-blue-600" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
-                    ) : (
-                      currentHolders.map((req) => (
-                        <tr key={req.id} className="border-b last:border-0">
-                          <td className="py-4">
-                            <div className="font-medium text-gray-900">{req.name}</div>
-                          </td>
-                          <td className="py-4">{req.position}</td>
-                          <td className="py-4">{req.item}</td>
-                          <td className="py-4">{req.requestMode === 'work_from_home' ? 'W.F.H' : 'Onsite'}</td>
-                          <td className="py-4 text-red-600">
-                            {req.expectedReturnDate ? new Date(req.expectedReturnDate).toLocaleDateString() : 'N/A'}
-                          </td>
-                          <td className="py-4">
-                            <div className="flex items-center justify-end space-x-4 text-gray-700">
-                              <button
-                                onClick={() => handleViewTransaction(req.id)}
-                                className="p-1 hover:bg-blue-50 rounded transition-colors"
-                                title="View Transaction Details"
-                              >
-                                <Eye className="h-5 w-5 cursor-pointer hover:text-blue-600" />
-                              </button>
-                              <button
-                                onClick={() => handleEditTransaction(req.id)}
-                                className="p-1 hover:bg-blue-50 rounded transition-colors"
-                                title="Edit Transaction"
-                              >
-                                <Pencil className="h-5 w-5 cursor-pointer hover:text-blue-600" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              )}
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </>
         )}
@@ -460,64 +413,33 @@ const ViewRequest = () => {
           <>
             <h3 className="mt-10 text-3xl font-semibold text-gray-700">Verify return</h3>
             <div className="mt-4 bg-white rounded-xl shadow p-6">
-              {loading ? (
-                <div className="flex justify-center items-center h-32">
-                  <div className="text-gray-500">Loading verify returns...</div>
-                </div>
-              ) : error ? (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-800">{error}</p>
-                </div>
-              ) : (
-                <table className="w-full text-sm text-left">
-                  <thead>
-                    <tr className="border-b text-gray-600">
-                      <th className="pb-2">Name</th>
-                      <th className="pb-2">Position</th>
-                      <th className="pb-2">Item</th>
-                      <th className="pb-2">End Date</th>
-                      <th className="pb-2 text-right">Actions</th>
+              <table className="w-full text-sm text-left">
+                <thead>
+                  <tr className="border-b text-gray-600">
+                    <th className="pb-2">Name</th>
+                    <th className="pb-2">Position</th>
+                    <th className="pb-2">Item</th>
+                    <th className="pb-2">End Date</th>
+                    <th className="pb-2 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {approvedRequests.map((req) => (
+                    <tr key={req.id} className="border-b last:border-0">
+                      <td className="py-4">{req.name}</td>
+                      <td className="py-4">{req.position}</td>
+                      <td className="py-4">{req.item}</td>
+                      <td className="py-4 text-red-600">10/08/25</td>
+                      <td className="py-4">
+                        <div className="flex items-center justify-end space-x-3">
+                          <span className="px-3 py-1 rounded-full text-xs bg-green-100 text-green-700">Partial</span>
+                          <span className="px-3 py-1 rounded-full text-xs bg-green-600 text-white">Returned</span>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {verifyReturns.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" className="text-center py-8 text-gray-500">
-                          No items to verify return
-                        </td>
-                      </tr>
-                    ) : (
-                      verifyReturns.map((req) => (
-                        <tr key={req.id} className="border-b last:border-0">
-                          <td className="py-4">
-                            <div className="font-medium text-gray-900">{req.name}</div>
-                          </td>
-                          <td className="py-4">{req.position}</td>
-                          <td className="py-4">{req.item}</td>
-                          <td className="py-4 text-red-600">
-                            {req.expectedReturnDate ? new Date(req.expectedReturnDate).toLocaleDateString() : 'N/A'}
-                          </td>
-                          <td className="py-4">
-                            <div className="flex items-center justify-end space-x-3">
-                              <span className={`px-3 py-1 rounded-full text-xs ${
-                                req.status === 'returned' 
-                                  ? 'bg-green-100 text-green-700' 
-                                  : req.status === 'lost'
-                                  ? 'bg-red-100 text-red-700'
-                                  : 'bg-yellow-100 text-yellow-700'
-                              }`}>
-                                {req.status === 'returned' ? 'Returned' : 
-                                 req.status === 'lost' ? 'Lost' : 
-                                 req.status === 'damaged' ? 'Damaged' : req.status}
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              )}
+                  ))}
+                </tbody>
+              </table>
             </div>
           </>
         )}

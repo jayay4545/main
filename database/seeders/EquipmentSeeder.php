@@ -30,7 +30,7 @@ class EquipmentSeeder extends Seeder
                 'model' => 'Latitude 5520',
                 'specifications' => 'Intel Core i7-1185G7, 16GB RAM, 512GB SSD, 15.6" FHD Display',
                 'serial_number' => 'DL5520' . rand(100000, 999999),
-                'asset_tag' => 'LAP001',
+                'asset_tag' => 'LAP' . str_pad(rand(1, 50), 3, '0', STR_PAD_LEFT),
                 'status' => 'available',
                 'condition' => 'excellent',
                 'purchase_price' => 1299.99,
@@ -46,7 +46,7 @@ class EquipmentSeeder extends Seeder
                 'model' => 'EliteBook 840 G8',
                 'specifications' => 'Intel Core i5-1135G7, 8GB RAM, 256GB SSD, 14" FHD Display',
                 'serial_number' => 'HP840G8' . rand(100000, 999999),
-                'asset_tag' => 'LAP002',
+                'asset_tag' => 'LAP' . str_pad(rand(1, 50), 3, '0', STR_PAD_LEFT),
                 'status' => 'available',
                 'condition' => 'good',
                 'purchase_price' => 1099.99,
@@ -62,7 +62,7 @@ class EquipmentSeeder extends Seeder
                 'model' => 'MacBook Pro 13" M1',
                 'specifications' => 'Apple M1 Chip, 8GB RAM, 256GB SSD, 13.3" Retina Display',
                 'serial_number' => 'MBP13M1' . rand(100000, 999999),
-                'asset_tag' => 'LAP003',
+                'asset_tag' => 'LAP' . str_pad(rand(1, 50), 3, '0', STR_PAD_LEFT),
                 'status' => 'in_use',
                 'condition' => 'excellent',
                 'purchase_price' => 1299.00,
@@ -78,7 +78,7 @@ class EquipmentSeeder extends Seeder
                 'model' => 'ThinkPad X1 Carbon Gen 9',
                 'specifications' => 'Intel Core i7-1165G7, 16GB RAM, 512GB SSD, 14" 4K Display',
                 'serial_number' => 'TPX1C9' . rand(100000, 999999),
-                'asset_tag' => 'LAP004',
+                'asset_tag' => 'LAP' . str_pad(rand(1, 50), 3, '0', STR_PAD_LEFT),
                 'status' => 'available',
                 'condition' => 'excellent',
                 'purchase_price' => 1599.99,
@@ -96,7 +96,7 @@ class EquipmentSeeder extends Seeder
                 'model' => 'U2422H',
                 'specifications' => '24" IPS, 1920x1080, USB-C, HDMI, DisplayPort',
                 'serial_number' => 'DU2422H' . rand(100000, 999999),
-                'asset_tag' => 'MON001',
+                'asset_tag' => 'MON' . str_pad(rand(1, 30), 3, '0', STR_PAD_LEFT),
                 'status' => 'available',
                 'condition' => 'excellent',
                 'purchase_price' => 299.99,
@@ -112,7 +112,7 @@ class EquipmentSeeder extends Seeder
                 'model' => 'U28R550U',
                 'specifications' => '27" 4K UHD, 3840x2160, HDMI, DisplayPort, USB Hub',
                 'serial_number' => 'SU28R550' . rand(100000, 999999),
-                'asset_tag' => 'MON002',
+                'asset_tag' => 'MON' . str_pad(rand(1, 30), 3, '0', STR_PAD_LEFT),
                 'status' => 'available',
                 'condition' => 'good',
                 'purchase_price' => 399.99,
@@ -303,8 +303,8 @@ class EquipmentSeeder extends Seeder
         $laptopModels = ['Inspiron', 'Pavilion', 'ThinkPad', 'MacBook Air', 'Galaxy Book', 'Gram', 'ZenBook', 'Swift'];
         $monitorModels = ['UltraSharp', 'EliteDisplay', 'ThinkVision', 'Studio Display', 'Odyssey', 'UltraFine', 'ProArt', 'VX'];
         
-        $usedAssetTags = Equipment::pluck('asset_tag')->toArray();
-        $usedSerialNumbers = Equipment::pluck('serial_number')->toArray();
+        $usedAssetTags = [];
+        $usedSerialNumbers = [];
         
         for ($i = 0; $i < 20; $i++) {
             $brand = $brands[array_rand($brands)];
@@ -324,9 +324,9 @@ class EquipmentSeeder extends Seeder
                 $prefix = 'MON';
             }
 
-            // Generate unique asset tag (avoid duplicates)
+            // Generate unique asset tag (start from 200 to avoid conflicts with predefined equipment)
             do {
-                $assetTag = $prefix . str_pad(rand(100, 999), 3, '0', STR_PAD_LEFT);
+                $assetTag = $prefix . str_pad(rand(200, 999), 3, '0', STR_PAD_LEFT);
             } while (in_array($assetTag, $usedAssetTags));
             $usedAssetTags[] = $assetTag;
 

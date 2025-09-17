@@ -9,26 +9,23 @@ class Transaction extends Model
 {
     protected $fillable = [
         'transaction_number',
-        'user_id',
-        'employee_id',
-        'equipment_id',
         'request_id',
+        'equipment_id',
+        'user_id',
+        'transaction_type',
         'status',
-        'request_mode',
-        'release_condition',
-        'release_date',
-        'released_by',
-        'return_condition',
-        'return_date',
+        'issued_at',
+        'returned_at',
         'expected_return_date',
-        'received_by',
-        'release_notes',
-        'return_notes',
+        'condition_on_issue',
+        'condition_on_return',
+        'notes',
+        'processed_by',
     ];
 
     protected $casts = [
-        'release_date' => 'date',
-        'return_date' => 'date',
+        'issued_at' => 'datetime',
+        'returned_at' => 'datetime',
         'expected_return_date' => 'date',
     ];
 
@@ -48,81 +45,53 @@ class Transaction extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function employee(): BelongsTo
+    public function processor(): BelongsTo
     {
-        return $this->belongsTo(Employee::class, 'employee_id');
-    }
-
-    public function releasedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'released_by');
-    }
-
-    public function receivedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'received_by');
+        return $this->belongsTo(User::class, 'processed_by');
     }
 
     // Scopes
-    public function scopePending($query)
+    public function scopeActive($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', 'active');
     }
 
-    public function scopeReleased($query)
+    public function scopeCompleted($query)
     {
-        return $query->where('status', 'released');
+        return $query->where('status', 'completed');
     }
 
-    public function scopeReturned($query)
+    public function scopeOverdue($query)
     {
-        return $query->where('status', 'returned');
+        return $query->where('status', 'overdue');
     }
 
-    public function scopeLost($query)
+    public function scopeByUser($query, $userId)
     {
-        return $query->where('status', 'lost');
-    }
-
-    public function scopeDamaged($query)
-    {
-        return $query->where('status', 'damaged');
-    }
-
-    public function scopeByEmployee($query, $employeeId)
-    {
-        return $query->where('employee_id', $employeeId);
+        return $query->where('user_id', $userId);
     }
 
     // Accessors & Mutators
-    public function getIsReleasedAttribute()
+    public function getIsActiveAttribute()
     {
-        return $this->status === 'released';
+        return $this->status === 'active';
     }
 
-    public function getIsReturnedAttribute()
+    public function getIsCompletedAttribute()
     {
-        return $this->status === 'returned';
+        return $this->status === 'completed';
     }
 
-    public function getIsPendingAttribute()
+    public function getIsOverdueAttribute()
     {
-        return $this->status === 'pending';
+        return $this->status === 'overdue';
     }
 
     public function getDurationAttribute()
     {
-        if ($this->release_date && $this->return_date) {
-            return $this->release_date->diffInDays($this->return_date);
+        if ($this->issued_at && $this->returned_at) {
+            return $this->issued_at->diffInDays($this->returned_at);
         }
         return null;
-    }
-
-    public function getFullNameAttribute()
-    {
-        if ($this->employee) {
-            return $this->employee->first_name . ' ' . $this->employee->last_name;
-        }
-        return 'N/A';
     }
 }

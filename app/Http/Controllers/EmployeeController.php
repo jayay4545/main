@@ -65,23 +65,21 @@ class EmployeeController extends Controller
     {
         try {
             $currentHolders = DB::table('transactions')
-                ->join('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
-                ->where('transactions.status', 'released')
+                ->join('users', 'transactions.user_id', '=', 'users.id')
+                ->join('equipment', 'transactions.equipment_id', '=', 'equipment.id')
+                ->where('transactions.status', 'completed')
                 ->select(
                     'transactions.id as transaction_id',
                     'transactions.transaction_number',
-                    'employees.first_name',
-                    'employees.last_name',
-                    'employees.position',
-                    'equipments.name as equipment_name',
-                    'equipments.category',
+                    'users.name as full_name',
+                    'users.position',
+                    'equipment.name as equipment_name',
+                    'equipment.brand as category',
                     'transactions.request_mode',
                     'transactions.expected_return_date',
                     'transactions.release_date'
                 )
                 ->orderBy('transactions.release_date', 'desc')
-                ->limit(50)
                 ->get();
 
             return response()->json([
@@ -105,22 +103,21 @@ class EmployeeController extends Controller
         try {
             $pendingRequests = DB::table('requests')
                 ->join('employees', 'requests.employee_id', '=', 'employees.id')
-                ->join('equipments', 'requests.equipment_id', '=', 'equipments.id')
+                ->join('equipment', 'requests.equipment_id', '=', 'equipment.id')
                 ->where('requests.status', 'pending')
                 ->select(
                     'requests.id as request_id',
-                    'requests.id as request_number',
+                    'requests.request_number',
                     'employees.first_name',
                     'employees.last_name',
                     'employees.position',
-                    'equipments.name as equipment_name',
-                    'equipments.category',
+                    'equipment.name as equipment_name',
+                    'equipment.brand as category',
                     'requests.request_mode',
                     'requests.reason',
-                    'requests.created_at as requested_date'
+                    'requests.requested_date'
                 )
-                ->orderBy('requests.created_at', 'desc')
-                ->limit(50)
+                ->orderBy('requests.requested_date', 'desc')
                 ->get();
 
             return response()->json([
@@ -137,70 +134,27 @@ class EmployeeController extends Controller
     }
 
     /**
-     * Get approved requests
-     */
-    public function approvedRequests()
-    {
-        try {
-            $approvedRequests = DB::table('requests')
-                ->join('employees', 'requests.employee_id', '=', 'employees.id')
-                ->join('equipments', 'requests.equipment_id', '=', 'equipments.id')
-                ->leftJoin('equipment_categories', 'equipments.category_id', '=', 'equipment_categories.id')
-                ->where('requests.status', 'approved')
-                ->select(
-                    'requests.id as request_id',
-                    'requests.id as request_number',
-                    'employees.first_name',
-                    'employees.last_name',
-                    'employees.position',
-                    'equipments.name as equipment_name',
-                    DB::raw('COALESCE(equipment_categories.name, "Uncategorized") as category'),
-                    'requests.request_mode',
-                    'requests.reason',
-                    'requests.approved_at',
-                    'requests.approval_notes'
-                )
-                ->orderBy('requests.approved_at', 'desc')
-                ->limit(50)
-                ->get();
-
-            return response()->json([
-                'success' => true,
-                'data' => $approvedRequests,
-                'count' => $approvedRequests->count()
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error fetching approved requests: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
      * Get employees with returned equipment for verification
      */
     public function verifyReturns()
     {
         try {
             $verifyReturns = DB::table('transactions')
-                ->join('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->join('equipments', 'transactions.equipment_id', '=', 'equipments.id')
-                ->where('transactions.status', 'returned')
+                ->join('users', 'transactions.user_id', '=', 'users.id')
+                ->join('equipment', 'transactions.equipment_id', '=', 'equipment.id')
+                ->where('transactions.status', 'overdue')
                 ->select(
                     'transactions.id as transaction_id',
                     'transactions.transaction_number',
-                    'employees.first_name',
-                    'employees.last_name',
-                    'employees.position',
-                    'equipments.name as equipment_name',
-                    'equipments.category',
+                    'users.name as full_name',
+                    'users.position',
+                    'equipment.name as equipment_name',
+                    'equipment.brand as category',
                     'transactions.return_date',
                     'transactions.expected_return_date',
                     'transactions.return_condition'
                 )
                 ->orderBy('transactions.return_date', 'desc')
-                ->limit(50)
                 ->get();
 
             return response()->json([
