@@ -5,6 +5,8 @@ import HomeSidebar from './HomeSidebar';
 import VerificationModal from './components/VerificationModal';
 import SimpleConfirmModal from './components/SimpleConfirmModal.jsx';
 import SuccessModal from './components/SuccessModal';
+import ViewTransactionModal from './components/ViewTransactionModal';
+import EditTransactionModal from './components/EditTransactionModal';
 import api from './services/api';
 
 const ViewRequest = () => {
@@ -89,6 +91,17 @@ const ViewRequest = () => {
     isOpen: false,
     mode: null, // 'approve' | 'delete'
     requestId: null
+  });
+
+  // View and Edit modal states
+  const [viewModal, setViewModal] = useState({
+    isOpen: false,
+    transactionData: null
+  });
+
+  const [editModal, setEditModal] = useState({
+    isOpen: false,
+    transactionData: null
   });
 
   const handleSelect = (next) => {
@@ -178,6 +191,48 @@ const ViewRequest = () => {
 
   const handleReasonChange = (reason) => {
     setModalState(prev => ({ ...prev, reason }));
+  };
+
+  // View and Edit modal handlers
+  const handleViewTransaction = (transactionId) => {
+    const transaction = currentHolders.find(t => t.id === transactionId);
+    if (transaction) {
+      setViewModal({
+        isOpen: true,
+        transactionData: transaction
+      });
+    }
+  };
+
+  const handleEditTransaction = (transactionId) => {
+    const transaction = currentHolders.find(t => t.id === transactionId);
+    if (transaction) {
+      setEditModal({
+        isOpen: true,
+        transactionData: transaction
+      });
+    }
+  };
+
+  const handleCloseViewModal = () => {
+    setViewModal({
+      isOpen: false,
+      transactionData: null
+    });
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModal({
+      isOpen: false,
+      transactionData: null
+    });
+  };
+
+  const handleTransactionUpdate = (updatedTransaction) => {
+    // Update the current holders list with the updated transaction
+    setCurrentHolders(prev => 
+      prev.map(t => t.id === updatedTransaction.id ? updatedTransaction : t)
+    );
   };
 
   // Success modal handlers
@@ -375,8 +430,20 @@ const ViewRequest = () => {
                           </td>
                           <td className="py-4">
                             <div className="flex items-center justify-end space-x-4 text-gray-700">
-                              <Eye className="h-5 w-5 cursor-pointer hover:text-blue-600" />
-                              <Pencil className="h-5 w-5 cursor-pointer hover:text-blue-600" />
+                              <button
+                                onClick={() => handleViewTransaction(req.id)}
+                                className="p-1 hover:bg-blue-50 rounded transition-colors"
+                                title="View Transaction Details"
+                              >
+                                <Eye className="h-5 w-5 cursor-pointer hover:text-blue-600" />
+                              </button>
+                              <button
+                                onClick={() => handleEditTransaction(req.id)}
+                                className="p-1 hover:bg-blue-50 rounded transition-colors"
+                                title="Edit Transaction"
+                              >
+                                <Pencil className="h-5 w-5 cursor-pointer hover:text-blue-600" />
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -510,12 +577,26 @@ const ViewRequest = () => {
               setModalState({ isOpen: true, type: 'reject', requestData: requestToReject, reason: '' });
             }
           }
-          setConfirmModal({ isOpen: false, mode: null, requestId: null });
-        }}
+          setConfirmModal({ isOpen: false, mode: null, requestId: null })        }}
         title={confirmModal.mode === 'approve' ? 'Approving Request' : 'Deleting Request'}
         message={'Are you sure you want to continue?'}
         confirmText={confirmModal.mode === 'approve' ? 'Approve' : 'Delete'}
         confirmTone={confirmModal.mode === 'approve' ? 'primary' : 'danger'}
+      />
+
+      {/* View Transaction Modal */}
+      <ViewTransactionModal
+        isOpen={viewModal.isOpen}
+        onClose={handleCloseViewModal}
+        transactionData={viewModal.transactionData}
+      />
+
+      {/* Edit Transaction Modal */}
+      <EditTransactionModal
+        isOpen={editModal.isOpen}
+        onClose={handleCloseEditModal}
+        transactionData={editModal.transactionData}
+        onUpdate={handleTransactionUpdate}
       />
     </div>
   );
