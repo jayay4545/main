@@ -11,9 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('equipment', function (Blueprint $table) {
-            // No longer needed as the constraint is added in the equipment table creation
-        });
+        //
     }
 
     /**
@@ -21,8 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('equipment', function (Blueprint $table) {
-            $table->dropForeign(['category_id']);
-        });
+        //
     }
 };

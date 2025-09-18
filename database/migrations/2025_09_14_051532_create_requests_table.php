@@ -13,19 +13,26 @@ return new class extends Migration
     {
         Schema::create('requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Employee making request
-            $table->foreignId('equipment_id')->constrained()->onDelete('cascade'); // Equipment requested
-            $table->enum('request_type', ['borrow', 'permanent_assignment', 'maintenance'])->default('borrow');
-            $table->enum('request_mode', ['onsite', 'wfh', 'hybrid'])->default('onsite'); // Work mode
-            $table->text('reason')->nullable(); // Reason for request
-            $table->date('start_date')->nullable(); // When equipment is needed
-            $table->date('end_date')->nullable(); // When equipment should be returned
-            $table->enum('status', ['pending', 'approved', 'rejected', 'cancelled'])->default('pending');
-            $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('set null'); // Who approved
-            $table->timestamp('approved_at')->nullable(); // When approved
-            $table->text('approval_notes')->nullable(); // Notes from approver
-            $table->text('rejection_reason')->nullable(); // Reason for rejection
+            $table->string('request_number')->unique();
+            $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade');
+            $table->foreignId('equipment_id')->constrained('equipment')->onDelete('cascade');
+            $table->enum('request_type', ['new_assignment', 'replacement', 'additional'])->default('new_assignment');
+            $table->enum('request_mode', ['on_site', 'work_from_home'])->nullable();
+            $table->enum('status', ['pending', 'approved', 'rejected', 'fulfilled'])->default('pending');
+            $table->text('reason')->nullable(); // Reason for the request
+            $table->date('requested_date');
+            $table->date('expected_start_date')->nullable();
+            $table->date('expected_end_date')->nullable();
+            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('approved_at')->nullable();
+            $table->text('approval_notes')->nullable();
+            $table->text('rejection_reason')->nullable();
             $table->timestamps();
+            
+            // Indexes
+            $table->index(['employee_id', 'status']);
+            $table->index(['equipment_id', 'status']);
+            $table->index('requested_date');
         });
     }
 

@@ -15,23 +15,21 @@ class RequestsSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get users and equipment
-        $users = User::where('role_id', function($query) {
-            $query->select('id')->from('roles')->where('name', 'employee');
-        })->get();
+        // Get employees and equipment
+        $employees = \App\Models\Employee::all();
         
         $equipment = Equipment::all();
         $admins = User::whereIn('role_id', function($query) {
             $query->select('id')->from('roles')->whereIn('name', ['admin', 'super_admin']);
         })->get();
 
-        if ($users->isEmpty() || $equipment->isEmpty()) {
+        if ($employees->isEmpty() || $equipment->isEmpty()) {
             echo "⚠️  No users or equipment found. Please run UserSeeder and EquipmentSeeder first.\n";
             return;
         }
 
-        $requestTypes = ['borrow', 'permanent_assignment', 'maintenance'];
-        $requestModes = ['onsite', 'wfh', 'hybrid'];
+        $requestTypes = ['new_assignment', 'replacement', 'additional'];
+        $requestModes = ['on_site', 'work_from_home'];
         $statuses = ['pending', 'approved', 'rejected', 'cancelled'];
         $reasons = [
             'Need laptop for remote work setup',
@@ -55,7 +53,7 @@ class RequestsSeeder extends Seeder
 
         // Create pending requests (15 items)
         for ($i = 0; $i < 15; $i++) {
-            $user = $users->random();
+            $employee = $employees->random();
             $equipmentItem = $equipment->random();
             $requestType = $requestTypes[array_rand($requestTypes)];
             $requestMode = $requestModes[array_rand($requestModes)];
@@ -67,13 +65,15 @@ class RequestsSeeder extends Seeder
                 : $startDate->copy()->addDays(rand(30, 365));
 
             $requests[] = Request::create([
-                'user_id' => $user->id,
+                'request_number' => 'REQ-' . date('Ymd') . '-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT),
+                'employee_id' => $employee->id,
                 'equipment_id' => $equipmentItem->id,
                 'request_type' => $requestType,
                 'request_mode' => $requestMode,
                 'reason' => $reason,
-                'start_date' => $startDate,
-                'end_date' => $endDate,
+                'requested_date' => now(),
+                'expected_start_date' => $startDate,
+                'expected_end_date' => $endDate,
                 'status' => 'pending',
                 'created_at' => Carbon::now()->subDays(rand(1, 14)),
                 'updated_at' => Carbon::now()->subDays(rand(1, 14)),
@@ -82,7 +82,7 @@ class RequestsSeeder extends Seeder
 
         // Create approved requests (20 items)
         for ($i = 0; $i < 20; $i++) {
-            $user = $users->random();
+            $employee = $employees->random();
             $equipmentItem = $equipment->random();
             $requestType = $requestTypes[array_rand($requestTypes)];
             $requestMode = $requestModes[array_rand($requestModes)];
@@ -95,13 +95,15 @@ class RequestsSeeder extends Seeder
                 : $startDate->copy()->addDays(rand(30, 365));
 
             $requests[] = Request::create([
-                'user_id' => $user->id,
+                'request_number' => 'REQ-' . date('Ymd') . '-' . str_pad($i + 16, 3, '0', STR_PAD_LEFT),
+                'employee_id' => $employee->id,
                 'equipment_id' => $equipmentItem->id,
                 'request_type' => $requestType,
                 'request_mode' => $requestMode,
                 'reason' => $reason,
-                'start_date' => $startDate,
-                'end_date' => $endDate,
+                'requested_date' => now()->subDays(rand(5, 35)),
+                'expected_start_date' => $startDate,
+                'expected_end_date' => $endDate,
                 'status' => 'approved',
                 'approved_by' => $admin->id,
                 'approved_at' => Carbon::now()->subDays(rand(1, 25)),
@@ -113,7 +115,7 @@ class RequestsSeeder extends Seeder
 
         // Create rejected requests (5 items)
         for ($i = 0; $i < 5; $i++) {
-            $user = $users->random();
+            $employee = $employees->random();
             $equipmentItem = $equipment->random();
             $requestType = $requestTypes[array_rand($requestTypes)];
             $requestMode = $requestModes[array_rand($requestModes)];
@@ -132,13 +134,15 @@ class RequestsSeeder extends Seeder
             ];
 
             $requests[] = Request::create([
-                'user_id' => $user->id,
+                'request_number' => 'REQ-' . date('Ymd') . '-' . str_pad($i + 36, 3, '0', STR_PAD_LEFT),
+                'employee_id' => $employee->id,
                 'equipment_id' => $equipmentItem->id,
                 'request_type' => $requestType,
                 'request_mode' => $requestMode,
                 'reason' => $reason,
-                'start_date' => Carbon::now()->addDays(rand(1, 7)),
-                'end_date' => Carbon::now()->addDays(rand(30, 365)),
+                'requested_date' => now()->subDays(rand(5, 15)),
+                'expected_start_date' => Carbon::now()->addDays(rand(1, 7)),
+                'expected_end_date' => Carbon::now()->addDays(rand(30, 365)),
                 'status' => 'rejected',
                 'approved_by' => $admin->id,
                 'approved_at' => Carbon::now()->subDays(rand(1, 10)),
@@ -150,21 +154,23 @@ class RequestsSeeder extends Seeder
 
         // Create cancelled requests (3 items)
         for ($i = 0; $i < 3; $i++) {
-            $user = $users->random();
+            $employee = $employees->random();
             $equipmentItem = $equipment->random();
             $requestType = $requestTypes[array_rand($requestTypes)];
             $requestMode = $requestModes[array_rand($requestModes)];
             $reason = $reasons[array_rand($reasons)];
 
             $requests[] = Request::create([
-                'user_id' => $user->id,
+                'request_number' => 'REQ-' . date('Ymd') . '-' . str_pad($i + 41, 3, '0', STR_PAD_LEFT),
+                'employee_id' => $employee->id,
                 'equipment_id' => $equipmentItem->id,
                 'request_type' => $requestType,
                 'request_mode' => $requestMode,
                 'reason' => $reason,
-                'start_date' => Carbon::now()->addDays(rand(1, 7)),
-                'end_date' => Carbon::now()->addDays(rand(30, 365)),
-                'status' => 'cancelled',
+                'requested_date' => now()->subDays(rand(3, 10)),
+                'expected_start_date' => Carbon::now()->addDays(rand(1, 7)),
+                'expected_end_date' => Carbon::now()->addDays(rand(30, 365)),
+                'status' => 'fulfilled',
                 'created_at' => Carbon::now()->subDays(rand(3, 10)),
                 'updated_at' => Carbon::now()->subDays(rand(1, 5)),
             ]);
