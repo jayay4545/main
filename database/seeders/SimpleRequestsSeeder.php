@@ -6,16 +6,12 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
-class RequestsSeeder extends Seeder
+class SimpleRequestsSeeder extends Seeder
 {
     public function run()
     {
-    DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-    DB::table('requests')->truncate();
-    DB::statement('SET FOREIGN_KEY_CHECKS=1;');
         DB::table('requests')->insert([
             [
-                'request_number' => 'REQ-20250918-001',
                 'employee_id' => 1,
                 'equipment_id' => 1,
                 'request_type' => 'new_assignment',
@@ -29,7 +25,6 @@ class RequestsSeeder extends Seeder
                 'updated_at' => Carbon::now()->subDays(5),
             ],
             [
-                'request_number' => 'REQ-20250918-002',
                 'employee_id' => 2,
                 'equipment_id' => 2,
                 'request_type' => 'replacement',

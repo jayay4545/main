@@ -52,23 +52,37 @@ class TransactionController extends Controller
     {
         try {
             // Use left joins and coalesce to avoid hard failures if related tables/columns differ
-            $transactions = DB::table('transactions')
+            $query = DB::table('transactions')
                 ->leftJoin('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->leftJoin('equipments', 'transactions.equipment_id', '=', 'equipments.id')
-                ->leftJoin('equipment_categories', 'equipments.category_id', '=', 'equipment_categories.id')
+                // Fix table names to match migrations: equipment (singular) and categories
+                ->leftJoin('equipment', 'transactions.equipment_id', '=', 'equipment.id')
+                ->leftJoin('categories', 'equipment.category_id', '=', 'categories.id')
                 ->select(
                     'transactions.*',
                     DB::raw("COALESCE(employees.first_name, '') as first_name"),
                     DB::raw("COALESCE(employees.last_name, '') as last_name"),
                     DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
                     DB::raw("COALESCE(employees.position, '') as position"),
-                    DB::raw("COALESCE(equipments.name, '') as equipment_name"),
-                    DB::raw("COALESCE(equipments.brand, '') as brand"),
-                    DB::raw("COALESCE(equipments.model, '') as model"),
-                    DB::raw("COALESCE(equipment_categories.name, '') as category_name")
+                    DB::raw("COALESCE(equipment.name, '') as equipment_name"),
+                    DB::raw("COALESCE(equipment.brand, '') as brand"),
+                    DB::raw("COALESCE(equipment.model, '') as model"),
+                    DB::raw("COALESCE(categories.name, '') as category_name")
                 )
-                ->orderBy('transactions.created_at', 'desc')
-                ->get();
+                ->orderBy('transactions.created_at', 'desc');
+
+            // Optional status filter with compatibility mapping
+            $status = request()->query('status');
+            if (!empty($status)) {
+                $statusMap = [
+                    'active' => 'pending',      // UI alias for pending transactions awaiting release
+                    'completed' => 'released',  // Old label used in some places -> map to released
+                    'overdue' => 'returned',    // Not a perfect mapping; adjust if needed
+                ];
+                $normalized = $statusMap[$status] ?? $status;
+                $query->where('transactions.status', $normalized);
+            }
+
+            $transactions = $query->get();
 
             return response()->json([
                 'success' => true,
@@ -102,11 +116,11 @@ class TransactionController extends Controller
         try {
             $validatedData = $request->validate([
                 'employee_id' => 'required|exists:employees,id',
-                'equipment_id' => 'required|exists:equipments,id',
+                'equipment_id' => 'required|exists:equipment,id',
                 'transaction_number' => 'required|string|unique:transactions,transaction_number',
-                'request_mode' => 'required|in:work_from_home,onsite',
+                'request_mode' => 'required|in:on_site,work_from_home',
                 'expected_return_date' => 'required|date',
-                'status' => 'sometimes|in:pending,active,released,returned,lost,damaged',
+                'status' => 'sometimes|in:pending,released,returned,lost,damaged',
             ]);
 
             $validatedData['status'] = $validatedData['status'] ?? 'pending';
@@ -117,12 +131,12 @@ class TransactionController extends Controller
 
             $transaction = DB::table('transactions')
                 ->leftJoin('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->leftJoin('equipments', 'transactions.equipment_id', '=', 'equipments.id')
+                ->leftJoin('equipment', 'transactions.equipment_id', '=', 'equipment.id')
                 ->where('transactions.id', $transactionId)
                 ->select(
                     'transactions.*',
                     DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
-                    DB::raw("COALESCE(equipments.name, '') as equipment_name")
+                    DB::raw("COALESCE(equipment.name, '') as equipment_name")
                 )
                 ->first();
 
@@ -153,8 +167,8 @@ class TransactionController extends Controller
         try {
             $transaction = DB::table('transactions')
                 ->leftJoin('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->leftJoin('equipments', 'transactions.equipment_id', '=', 'equipments.id')
-                ->leftJoin('equipment_categories', 'equipments.category_id', '=', 'equipment_categories.id')
+                ->leftJoin('equipment', 'transactions.equipment_id', '=', 'equipment.id')
+                ->leftJoin('categories', 'equipment.category_id', '=', 'categories.id')
                 ->where('transactions.id', $id)
                 ->select(
                     'transactions.*',
@@ -162,10 +176,10 @@ class TransactionController extends Controller
                     'employees.last_name',
                     DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
                     'employees.position',
-                    'equipments.name as equipment_name',
-                    'equipments.brand',
-                    'equipments.model',
-                    'equipment_categories.name as category_name'
+                    'equipment.name as equipment_name',
+                    'equipment.brand',
+                    'equipment.model',
+                    'categories.name as category_name'
                 )
                 ->first();
 
@@ -204,7 +218,7 @@ class TransactionController extends Controller
             }
 
             $validatedData = $request->validate([
-                'status' => 'sometimes|in:pending,active,released,returned,lost,damaged',
+                'status' => 'sometimes|in:pending,released,returned,lost,damaged',
                 'expected_return_date' => 'sometimes|date',
                 'return_date' => 'sometimes|date',
                 'return_condition' => 'sometimes|string',
@@ -217,12 +231,12 @@ class TransactionController extends Controller
 
             $updatedTransaction = DB::table('transactions')
                 ->leftJoin('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->leftJoin('equipments', 'transactions.equipment_id', '=', 'equipments.id')
+                ->leftJoin('equipment', 'transactions.equipment_id', '=', 'equipment.id')
                 ->where('transactions.id', $id)
                 ->select(
                     'transactions.*',
                     DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
-                    DB::raw("COALESCE(equipments.name, '') as equipment_name")
+                    DB::raw("COALESCE(equipment.name, '') as equipment_name")
                 )
                 ->first();
 
