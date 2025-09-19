@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\Api\TransactionController;
+use App\Http\Controllers\Api\RequestController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -18,6 +19,16 @@ Route::post('/employees', [EmployeeController::class, 'store']);
 Route::get('/employees/{id}', [EmployeeController::class, 'show']);
 Route::put('/employees/{id}', [EmployeeController::class, 'update']);
 Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
+
+// Request routes
+Route::get('/requests', [RequestController::class, 'index']);
+Route::post('/requests', [RequestController::class, 'store']);
+Route::get('/requests/{id}', [RequestController::class, 'show']);
+Route::put('/requests/{id}', [RequestController::class, 'update']);
+Route::delete('/requests/{id}', [RequestController::class, 'destroy']);
+Route::post('/requests/{id}/approve', [RequestController::class, 'approve']);
+Route::post('/requests/{id}/reject', [RequestController::class, 'reject']);
+Route::get('/requests/statistics', [RequestController::class, 'statistics']);
 
 // Transaction routes
 Route::get('/transactions/dashboard', [TransactionController::class, 'dashboard']);

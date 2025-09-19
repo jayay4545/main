@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Request as EquipmentRequest;
-use App\Models\Equipment;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
@@ -18,47 +16,65 @@ class RequestController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = EquipmentRequest::with(['user', 'equipment.category', 'approver']);
+        try {
+            $query = DB::table('requests')
+                ->leftJoin('employees', 'requests.employee_id', '=', 'employees.id')
+                ->leftJoin('equipment', 'requests.equipment_id', '=', 'equipment.id')
+                ->leftJoin('categories', 'equipment.category_id', '=', 'categories.id')
+                ->leftJoin('users as approver', 'requests.approved_by', '=', 'approver.id')
+                ->select(
+                    'requests.*',
+                    DB::raw("COALESCE(employees.first_name, '') as first_name"),
+                    DB::raw("COALESCE(employees.last_name, '') as last_name"),
+                    DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
+                    DB::raw("COALESCE(employees.position, '') as position"),
+                    DB::raw("COALESCE(equipment.name, '') as equipment_name"),
+                    DB::raw("COALESCE(equipment.brand, '') as brand"),
+                    DB::raw("COALESCE(equipment.model, '') as model"),
+                    DB::raw("COALESCE(categories.name, '') as category_name"),
+                    DB::raw("COALESCE(approver.name, '') as approved_by_name")
+                )
+                ->orderBy('requests.created_at', 'desc');
 
         // Filter by status
         if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
+                $query->where('requests.status', $request->status);
+            }
 
-        // Filter by user
-        if ($request->has('user_id')) {
-            $query->where('user_id', $request->user_id);
+            // Filter by employee
+            if ($request->has('employee_id')) {
+                $query->where('requests.employee_id', $request->employee_id);
         }
 
         // Filter by equipment
         if ($request->has('equipment_id')) {
-            $query->where('equipment_id', $request->equipment_id);
+                $query->where('requests.equipment_id', $request->equipment_id);
         }
 
         // Filter by request type
         if ($request->has('request_type')) {
-            $query->where('request_type', $request->request_type);
+                $query->where('requests.request_type', $request->request_type);
         }
 
         // Filter by request mode
         if ($request->has('request_mode')) {
-            $query->where('request_mode', $request->request_mode);
-        }
+                $query->where('requests.request_mode', $request->request_mode);
+            }
 
-        // Sort
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-        $query->orderBy($sortBy, $sortOrder);
-
-        // Paginate
-        $perPage = $request->get('per_page', 15);
-        $requests = $query->paginate($perPage);
+            $requests = $query->get();
 
         return response()->json([
             'success' => true,
             'data' => $requests,
+                'count' => $requests->count(),
             'message' => 'Requests retrieved successfully'
         ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching requests: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -68,25 +84,27 @@ class RequestController extends Controller
     {
         try {
             $validated = $request->validate([
+                'employee_id' => 'required|exists:employees,id',
                 'equipment_id' => 'required|exists:equipment,id',
-                'request_type' => 'required|in:borrow,permanent_assignment,maintenance',
-                'request_mode' => 'required|in:onsite,wfh,hybrid',
+                'request_type' => 'required|in:new_assignment,replacement,additional',
+                'request_mode' => 'required|in:on_site,work_from_home',
                 'reason' => 'nullable|string',
-                'start_date' => 'nullable|date|after_or_equal:today',
-                'end_date' => 'nullable|date|after:start_date',
+                'expected_start_date' => 'nullable|date|after_or_equal:today',
+                'expected_end_date' => 'nullable|date|after:expected_start_date',
             ]);
 
             // Check if equipment is available
-            $equipment = Equipment::findOrFail($validated['equipment_id']);
-            if ($equipment->status !== 'available') {
+            $equipment = DB::table('equipment')->where('id', $validated['equipment_id'])->first();
+            if (!$equipment || $equipment->status !== 'available') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Equipment is not available for request'
                 ], 422);
             }
 
-            // Check if user already has a pending request for this equipment
-            $existingRequest = EquipmentRequest::where('user_id', Auth::id())
+            // Check if employee already has a pending request for this equipment
+            $existingRequest = DB::table('requests')
+                ->where('employee_id', $validated['employee_id'])
                                               ->where('equipment_id', $validated['equipment_id'])
                                               ->where('status', 'pending')
                                               ->exists();
@@ -94,19 +112,50 @@ class RequestController extends Controller
             if ($existingRequest) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You already have a pending request for this equipment'
+                    'message' => 'Employee already has a pending request for this equipment'
                 ], 422);
             }
 
-            $validated['user_id'] = Auth::id();
-            $validated['status'] = 'pending';
+            // Generate request number
+            $requestNumber = 'REQ-' . str_pad(DB::table('requests')->count() + 1, 6, '0', STR_PAD_LEFT);
 
-            $equipmentRequest = EquipmentRequest::create($validated);
-            $equipmentRequest->load(['user', 'equipment.category']);
+            $requestData = [
+                'request_number' => $requestNumber,
+                'employee_id' => $validated['employee_id'],
+                'equipment_id' => $validated['equipment_id'],
+                'request_type' => $validated['request_type'],
+                'request_mode' => $validated['request_mode'],
+                'reason' => $validated['reason'] ?? null,
+                'requested_date' => now()->toDateString(),
+                'expected_start_date' => $validated['expected_start_date'] ?? null,
+                'expected_end_date' => $validated['expected_end_date'] ?? null,
+                'status' => 'pending',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+
+            $requestId = DB::table('requests')->insertGetId($requestData);
+
+            // Fetch the created request with related data
+            $createdRequest = DB::table('requests')
+                ->leftJoin('employees', 'requests.employee_id', '=', 'employees.id')
+                ->leftJoin('equipment', 'requests.equipment_id', '=', 'equipment.id')
+                ->leftJoin('categories', 'equipment.category_id', '=', 'categories.id')
+                ->where('requests.id', $requestId)
+                ->select(
+                    'requests.*',
+                    DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
+                    DB::raw("COALESCE(employees.position, '') as position"),
+                    DB::raw("COALESCE(equipment.name, '') as equipment_name"),
+                    DB::raw("COALESCE(equipment.brand, '') as brand"),
+                    DB::raw("COALESCE(equipment.model, '') as model"),
+                    DB::raw("COALESCE(categories.name, '') as category_name")
+                )
+                ->first();
 
             return response()->json([
                 'success' => true,
-                'data' => $equipmentRequest,
+                'data' => $createdRequest,
                 'message' => 'Request created successfully'
             ], 201);
 
@@ -116,6 +165,11 @@ class RequestController extends Controller
                 'message' => 'Validation failed',
                 'errors' => $e->errors()
             ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error creating request: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -124,14 +178,43 @@ class RequestController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        $equipmentRequest = EquipmentRequest::with(['user', 'equipment.category', 'approver', 'transaction'])
-                                          ->findOrFail($id);
+        try {
+            $request = DB::table('requests')
+                ->leftJoin('employees', 'requests.employee_id', '=', 'employees.id')
+                ->leftJoin('equipment', 'requests.equipment_id', '=', 'equipment.id')
+                ->leftJoin('categories', 'equipment.category_id', '=', 'categories.id')
+                ->leftJoin('users as approver', 'requests.approved_by', '=', 'approver.id')
+                ->where('requests.id', $id)
+                ->select(
+                    'requests.*',
+                    DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
+                    DB::raw("COALESCE(employees.position, '') as position"),
+                    DB::raw("COALESCE(equipment.name, '') as equipment_name"),
+                    DB::raw("COALESCE(equipment.brand, '') as brand"),
+                    DB::raw("COALESCE(equipment.model, '') as model"),
+                    DB::raw("COALESCE(categories.name, '') as category_name"),
+                    DB::raw("COALESCE(approver.name, '') as approved_by_name")
+                )
+                ->first();
+
+            if (!$request) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Request not found'
+                ], 404);
+            }
 
         return response()->json([
             'success' => true,
-            'data' => $equipmentRequest,
+                'data' => $request,
             'message' => 'Request retrieved successfully'
         ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching request: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -140,10 +223,17 @@ class RequestController extends Controller
     public function update(Request $request, string $id): JsonResponse
     {
         try {
-            $equipmentRequest = EquipmentRequest::findOrFail($id);
+            $existingRequest = DB::table('requests')->where('id', $id)->first();
+            
+            if (!$existingRequest) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Request not found'
+                ], 404);
+            }
 
             // Only allow updates to pending requests
-            if ($equipmentRequest->status !== 'pending') {
+            if ($existingRequest->status !== 'pending') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Only pending requests can be updated'
@@ -151,19 +241,36 @@ class RequestController extends Controller
             }
 
             $validated = $request->validate([
-                'request_type' => 'sometimes|required|in:borrow,permanent_assignment,maintenance',
-                'request_mode' => 'sometimes|required|in:onsite,wfh,hybrid',
+                'request_type' => 'sometimes|required|in:new_assignment,replacement,additional',
+                'request_mode' => 'sometimes|required|in:on_site,work_from_home',
                 'reason' => 'nullable|string',
-                'start_date' => 'nullable|date|after_or_equal:today',
-                'end_date' => 'nullable|date|after:start_date',
+                'expected_start_date' => 'nullable|date|after_or_equal:today',
+                'expected_end_date' => 'nullable|date|after:expected_start_date',
             ]);
 
-            $equipmentRequest->update($validated);
-            $equipmentRequest->load(['user', 'equipment.category']);
+            $validated['updated_at'] = now();
+            DB::table('requests')->where('id', $id)->update($validated);
+
+            // Fetch updated request with related data
+            $updatedRequest = DB::table('requests')
+                ->leftJoin('employees', 'requests.employee_id', '=', 'employees.id')
+                ->leftJoin('equipment', 'requests.equipment_id', '=', 'equipment.id')
+                ->leftJoin('categories', 'equipment.category_id', '=', 'categories.id')
+                ->where('requests.id', $id)
+                ->select(
+                    'requests.*',
+                    DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
+                    DB::raw("COALESCE(employees.position, '') as position"),
+                    DB::raw("COALESCE(equipment.name, '') as equipment_name"),
+                    DB::raw("COALESCE(equipment.brand, '') as brand"),
+                    DB::raw("COALESCE(equipment.model, '') as model"),
+                    DB::raw("COALESCE(categories.name, '') as category_name")
+                )
+                ->first();
 
             return response()->json([
                 'success' => true,
-                'data' => $equipmentRequest,
+                'data' => $updatedRequest,
                 'message' => 'Request updated successfully'
             ]);
 
@@ -173,6 +280,11 @@ class RequestController extends Controller
                 'message' => 'Validation failed',
                 'errors' => $e->errors()
             ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating request: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -181,22 +293,36 @@ class RequestController extends Controller
      */
     public function destroy(string $id): JsonResponse
     {
-        $equipmentRequest = EquipmentRequest::findOrFail($id);
+        try {
+            $request = DB::table('requests')->where('id', $id)->first();
+            
+            if (!$request) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Request not found'
+                ], 404);
+            }
 
         // Only allow deletion of pending requests
-        if ($equipmentRequest->status !== 'pending') {
+            if ($request->status !== 'pending') {
             return response()->json([
                 'success' => false,
                 'message' => 'Only pending requests can be deleted'
             ], 422);
         }
 
-        $equipmentRequest->delete();
+            DB::table('requests')->where('id', $id)->delete();
 
         return response()->json([
             'success' => true,
             'message' => 'Request deleted successfully'
         ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error deleting request: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -205,7 +331,14 @@ class RequestController extends Controller
     public function approve(Request $request, string $id): JsonResponse
     {
         try {
-            $equipmentRequest = EquipmentRequest::findOrFail($id);
+            $equipmentRequest = DB::table('requests')->where('id', $id)->first();
+            
+            if (!$equipmentRequest) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Request not found'
+                ], 404);
+            }
 
             if ($equipmentRequest->status !== 'pending') {
                 return response()->json([
@@ -218,36 +351,61 @@ class RequestController extends Controller
                 'approval_notes' => 'nullable|string',
             ]);
 
-            DB::transaction(function () use ($equipmentRequest, $validated) {
+            DB::transaction(function () use ($equipmentRequest, $validated, $id) {
                 // Update request status
-                $equipmentRequest->update([
+                DB::table('requests')->where('id', $id)->update([
                     'status' => 'approved',
-                    'approved_by' => Auth::id(),
+                    'approved_by' => 1, // Default admin user, you may want to get this from auth
                     'approved_at' => now(),
                     'approval_notes' => $validated['approval_notes'] ?? null,
+                    'updated_at' => now(),
                 ]);
 
                 // Update equipment status
-                $equipmentRequest->equipment->update(['status' => 'in_use']);
+                DB::table('equipment')->where('id', $equipmentRequest->equipment_id)->update([
+                    'status' => 'in_use',
+                    'updated_at' => now(),
+                ]);
 
                 // Create transaction record
-                $equipmentRequest->transaction()->create([
+                $transactionNumber = 'TXN-' . str_pad(DB::table('transactions')->count() + 1, 6, '0', STR_PAD_LEFT);
+                
+                DB::table('transactions')->insert([
+                    'transaction_number' => $transactionNumber,
+                    'user_id' => 1, // Default admin user
+                    'employee_id' => $equipmentRequest->employee_id,
                     'equipment_id' => $equipmentRequest->equipment_id,
-                    'user_id' => $equipmentRequest->user_id,
-                    'transaction_type' => 'issue',
-                    'status' => 'active',
-                    'issued_at' => now(),
-                    'expected_return_date' => $equipmentRequest->end_date,
-                    'condition_on_issue' => $equipmentRequest->equipment->condition,
-                    'processed_by' => Auth::id(),
+                    'request_id' => $id,
+                    'status' => 'pending', // Will be changed to 'released' when equipment is actually released
+                    'request_mode' => $equipmentRequest->request_mode,
+                    'expected_return_date' => $equipmentRequest->expected_end_date,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             });
 
-            $equipmentRequest->load(['user', 'equipment.category', 'approver', 'transaction']);
+            // Fetch updated request with related data
+            $updatedRequest = DB::table('requests')
+                ->leftJoin('employees', 'requests.employee_id', '=', 'employees.id')
+                ->leftJoin('equipment', 'requests.equipment_id', '=', 'equipment.id')
+                ->leftJoin('categories', 'equipment.category_id', '=', 'categories.id')
+                ->leftJoin('users as approver', 'requests.approved_by', '=', 'approver.id')
+                ->where('requests.id', $id)
+                ->select(
+                    'requests.*',
+                    DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
+                    DB::raw("COALESCE(employees.position, '') as position"),
+                    DB::raw("COALESCE(equipment.name, '') as equipment_name"),
+                    DB::raw("COALESCE(equipment.brand, '') as brand"),
+                    DB::raw("COALESCE(equipment.model, '') as model"),
+                    DB::raw("COALESCE(categories.name, '') as category_name"),
+                    DB::raw("COALESCE(approver.name, '') as approved_by_name")
+                )
+                ->first();
 
             return response()->json([
                 'success' => true,
-                'data' => $equipmentRequest,
+                'data' => $updatedRequest,
                 'message' => 'Request approved successfully'
             ]);
 
@@ -257,6 +415,11 @@ class RequestController extends Controller
                 'message' => 'Validation failed',
                 'errors' => $e->errors()
             ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error approving request: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -266,7 +429,14 @@ class RequestController extends Controller
     public function reject(Request $request, string $id): JsonResponse
     {
         try {
-            $equipmentRequest = EquipmentRequest::findOrFail($id);
+            $equipmentRequest = DB::table('requests')->where('id', $id)->first();
+            
+            if (!$equipmentRequest) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Request not found'
+                ], 404);
+            }
 
             if ($equipmentRequest->status !== 'pending') {
                 return response()->json([
@@ -279,18 +449,36 @@ class RequestController extends Controller
                 'rejection_reason' => 'required|string',
             ]);
 
-            $equipmentRequest->update([
+            DB::table('requests')->where('id', $id)->update([
                 'status' => 'rejected',
-                'approved_by' => Auth::id(),
+                'approved_by' => 1, // Default admin user, you may want to get this from auth
                 'approved_at' => now(),
                 'rejection_reason' => $validated['rejection_reason'],
+                'updated_at' => now(),
             ]);
 
-            $equipmentRequest->load(['user', 'equipment.category', 'approver']);
+            // Fetch updated request with related data
+            $updatedRequest = DB::table('requests')
+                ->leftJoin('employees', 'requests.employee_id', '=', 'employees.id')
+                ->leftJoin('equipment', 'requests.equipment_id', '=', 'equipment.id')
+                ->leftJoin('categories', 'equipment.category_id', '=', 'categories.id')
+                ->leftJoin('users as approver', 'requests.approved_by', '=', 'approver.id')
+                ->where('requests.id', $id)
+                ->select(
+                    'requests.*',
+                    DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
+                    DB::raw("COALESCE(employees.position, '') as position"),
+                    DB::raw("COALESCE(equipment.name, '') as equipment_name"),
+                    DB::raw("COALESCE(equipment.brand, '') as brand"),
+                    DB::raw("COALESCE(equipment.model, '') as model"),
+                    DB::raw("COALESCE(categories.name, '') as category_name"),
+                    DB::raw("COALESCE(approver.name, '') as approved_by_name")
+                )
+                ->first();
 
             return response()->json([
                 'success' => true,
-                'data' => $equipmentRequest,
+                'data' => $updatedRequest,
                 'message' => 'Request rejected successfully'
             ]);
 
@@ -300,6 +488,11 @@ class RequestController extends Controller
                 'message' => 'Validation failed',
                 'errors' => $e->errors()
             ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error rejecting request: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -308,16 +501,19 @@ class RequestController extends Controller
      */
     public function statistics(): JsonResponse
     {
+        try {
         $stats = [
-            'total' => EquipmentRequest::count(),
-            'pending' => EquipmentRequest::where('status', 'pending')->count(),
-            'approved' => EquipmentRequest::where('status', 'approved')->count(),
-            'rejected' => EquipmentRequest::where('status', 'rejected')->count(),
-            'cancelled' => EquipmentRequest::where('status', 'cancelled')->count(),
-            'by_type' => EquipmentRequest::selectRaw('request_type, COUNT(*) as count')
+                'total' => DB::table('requests')->count(),
+                'pending' => DB::table('requests')->where('status', 'pending')->count(),
+                'approved' => DB::table('requests')->where('status', 'approved')->count(),
+                'rejected' => DB::table('requests')->where('status', 'rejected')->count(),
+                'fulfilled' => DB::table('requests')->where('status', 'fulfilled')->count(),
+                'by_type' => DB::table('requests')
+                    ->selectRaw('request_type, COUNT(*) as count')
                                         ->groupBy('request_type')
                                         ->pluck('count', 'request_type'),
-            'by_mode' => EquipmentRequest::selectRaw('request_mode, COUNT(*) as count')
+                'by_mode' => DB::table('requests')
+                    ->selectRaw('request_mode, COUNT(*) as count')
                                         ->groupBy('request_mode')
                                         ->pluck('count', 'request_mode'),
         ];
@@ -327,5 +523,11 @@ class RequestController extends Controller
             'data' => $stats,
             'message' => 'Request statistics retrieved successfully'
         ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching request statistics: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

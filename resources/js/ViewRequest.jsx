@@ -10,19 +10,10 @@ import EditTransactionModal from './components/EditTransactionModal';
 import api from './services/api';
 
 const ViewRequest = () => {
-  const [pendingRequests, setPendingRequests] = useState([
-    { id: 1, name: 'John Paul Francisco', position: 'NOC tier 1', item: 'Dell Laptop + 24" Monitor', requestDate: '2024-01-15' },
-    { id: 2, name: 'Kyle Dela Cruz', position: 'NOC tier 1', item: 'MacBook Pro + Magic Mouse', requestDate: '2024-01-16' },
-    { id: 3, name: 'Rica Alorro', position: 'NOC tier 1', item: 'HP Laptop + External Keyboard', requestDate: '2024-01-17' },
-    { id: 4, name: 'Carlo Divino', position: 'NOC tier 1', item: 'Lenovo ThinkPad + Webcam', requestDate: '2024-01-18' },
-    { id: 5, name: 'Maria Santos', position: 'Software Developer', item: 'Gaming Chair + Standing Desk', requestDate: '2024-01-19' },
-    { id: 6, name: 'David Kim', position: 'UI/UX Designer', item: 'Wacom Tablet + 4K Monitor', requestDate: '2024-01-20' },
-  ]);
-
-  const [approvedRequests, setApprovedRequests] = useState([
-    { id: 101, name: 'Alex Thompson', position: 'Senior Developer', item: 'Dell XPS 15 + Dual Monitors', status: 'Approved', approvedBy: 'John F.', approvedAt: '2024-01-10' },
-    { id: 102, name: 'Lisa Chen', position: 'Data Analyst', item: 'MacBook Air + iPad Pro', status: 'Approved', approvedBy: 'John F.', approvedAt: '2024-01-12' },
-  ]);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [approvedRequests, setApprovedRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [view, setView] = useState('viewRequest');
@@ -115,19 +106,25 @@ const ViewRequest = () => {
     });
   };
 
-  const handleModalConfirm = () => {
+  const handleModalConfirm = async () => {
     const { type, requestData } = modalState;
     
+    try {
     if (type === 'approve') {
+        const response = await api.post(`/requests/${requestData.id}/approve`, {
+          approval_notes: modalState.reason
+        });
+        
+        if (response.data.success) {
       // Remove from pending requests
       setPendingRequests(prev => prev.filter(req => req.id !== requestData.id));
       
       // Add to approved requests
       const approvedRequest = {
         ...requestData,
-        status: "Approved",
-        approvedBy: "John F.",
-        approvedAt: new Date().toLocaleDateString()
+            status: "approved",
+            approved_by_name: "Admin",
+            approved_at: new Date().toISOString()
       };
       
       setApprovedRequests(prev => [...prev, approvedRequest]);
@@ -135,15 +132,24 @@ const ViewRequest = () => {
       // Redirect to dedicated View Approved page
       if (typeof window !== 'undefined') {
         window.location.href = '/viewapproved';
+          }
       }
     } else if (type === 'reject') {
+        const response = await api.post(`/requests/${requestData.id}/reject`, {
+          rejection_reason: modalState.reason
+        });
+        
+        if (response.data.success) {
       // Remove from pending requests
       setPendingRequests(prev => prev.filter(req => req.id !== requestData.id));
-      
-      // Optionally keep a simple feedback (no redirect)
+        }
     }
     
     handleModalClose();
+    } catch (err) {
+      console.error('Error processing request:', err);
+      alert('Error processing request: ' + (err.response?.data?.message || err.message));
+    }
   };
 
   const handleReasonChange = (reason) => {
@@ -192,12 +198,36 @@ const ViewRequest = () => {
     );
   };
 
-  // Fetch transactions for Current holder view
+  // Fetch data on component mount
   useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const response = await api.get('/transactions');
-        const rows = Array.isArray(response.data?.data) ? response.data.data : [];
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch pending requests
+      const pendingResponse = await api.get('/requests', { params: { status: 'pending' } });
+      if (pendingResponse.data.success) {
+        setPendingRequests(pendingResponse.data.data);
+      } else {
+        console.error('Failed to fetch pending requests:', pendingResponse.data.message);
+      }
+      
+      // Fetch approved requests
+      const approvedResponse = await api.get('/requests', { params: { status: 'approved' } });
+      if (approvedResponse.data.success) {
+        setApprovedRequests(approvedResponse.data.data);
+      } else {
+        console.error('Failed to fetch approved requests:', approvedResponse.data.message);
+      }
+      
+      // Fetch transactions for Current holder view
+      const transactionsResponse = await api.get('/transactions');
+      if (transactionsResponse.data.success) {
+        const rows = Array.isArray(transactionsResponse.data.data) ? transactionsResponse.data.data : [];
         const mapped = rows.map((t) => ({
           id: t.id,
           name: t.full_name || t.name || '',
@@ -219,14 +249,17 @@ const ViewRequest = () => {
           categoryName: t.category_name || null,
         }));
         setCurrentHolders(mapped);
-      } catch (e) {
-        console.error('Failed to load transactions', e);
-        setCurrentHolders([]);
+      } else {
+        console.error('Failed to fetch transactions:', transactionsResponse.data.message);
       }
-    };
-
-    fetchTransactions();
-  }, []);
+      
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError('Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Success modal handlers
   const handleSuccessModalClose = () => {
@@ -311,18 +344,37 @@ const ViewRequest = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {pendingRequests.map((req) => (
+                  {loading ? (
+                    <tr>
+                      <td colSpan="4" className="py-8 text-center text-gray-500">
+                        Loading pending requests...
+                      </td>
+                    </tr>
+                  ) : error ? (
+                    <tr>
+                      <td colSpan="4" className="py-8 text-center text-red-500">
+                        Error: {error}
+                      </td>
+                    </tr>
+                  ) : pendingRequests.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" className="py-8 text-center text-gray-500">
+                        No pending requests found
+                      </td>
+                    </tr>
+                  ) : (
+                    pendingRequests.map((req) => (
                     <tr
                       key={req.id}
                       onClick={() => handleRowClick(req.id)}
                       className="border-b last:border-0 cursor-pointer hover:bg-gray-50"
                     >
                       <td className="py-4">
-                        <div className="font-medium text-gray-900">{req.name}</div>
+                          <div className="font-medium text-gray-900">{req.full_name}</div>
                         <div className="text-gray-500 text-xs">{req.position}</div>
                       </td>
-                      <td className="py-4 text-gray-700">{req.item}</td>
-                      <td className="py-4 text-gray-600 text-sm">{req.requestDate}</td>
+                        <td className="py-4 text-gray-700">{req.equipment_name}</td>
+                        <td className="py-4 text-gray-600 text-sm">{req.requested_date}</td>
                       <td className="py-4">
                         <div className="flex items-center justify-end space-x-3">
                           <button 
@@ -351,7 +403,8 @@ const ViewRequest = () => {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -479,18 +532,26 @@ const ViewRequest = () => {
       <SimpleConfirmModal
         isOpen={confirmModal.isOpen}
         onClose={() => setConfirmModal({ isOpen: false, mode: null, requestId: null })}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (confirmModal.mode === 'approve') {
+            try {
+              const response = await api.post(`/requests/${confirmModal.requestId}/approve`);
+              if (response.data.success) {
             const requestToApprove = pendingRequests.find(req => req.id === confirmModal.requestId);
             if (requestToApprove) {
               setPendingRequests(prev => prev.filter(req => req.id !== confirmModal.requestId));
               const approvedRequest = {
                 ...requestToApprove,
-                status: 'Approved',
-                approvedBy: 'John F.',
-                approvedAt: new Date().toLocaleDateString()
+                    status: 'approved',
+                    approved_by_name: 'Admin',
+                    approved_at: new Date().toISOString()
               };
               setApprovedRequests(prev => [...prev, approvedRequest]);
+                }
+              }
+            } catch (err) {
+              console.error('Error approving request:', err);
+              alert('Error approving request: ' + (err.response?.data?.message || err.message));
             }
           } else if (confirmModal.mode === 'delete') {
             // For delete, open the detailed reject modal to capture optional reason
@@ -499,7 +560,8 @@ const ViewRequest = () => {
               setModalState({ isOpen: true, type: 'reject', requestData: requestToReject, reason: '' });
             }
           }
-          setConfirmModal({ isOpen: false, mode: null, requestId: null })        }}
+          setConfirmModal({ isOpen: false, mode: null, requestId: null });
+        }}
         title={confirmModal.mode === 'approve' ? 'Approving Request' : 'Deleting Request'}
         message={'Are you sure you want to continue?'}
         confirmText={confirmModal.mode === 'approve' ? 'Approve' : 'Delete'}

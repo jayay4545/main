@@ -5,6 +5,7 @@ import HomeSidebar from './HomeSidebar';
 import ConfirmModal from './components/ConfirmModal.jsx';
 import PrintReceipt from './components/PrintReceipt.jsx';
 import { transactionService, apiUtils } from './services/api.js';
+import api from './services/api';
 
 const ViewApproved = () => {
   const [approved, setApproved] = useState([]);
@@ -47,22 +48,28 @@ const ViewApproved = () => {
         setDashboardStats(statsResponse.data);
       }
       
-      // Fetch approved transactions (status = 'active' - ready for release)
-      const approvedResponse = await transactionService.getAll({ status: 'active' });
-      if (approvedResponse.success) {
-        setApproved(approvedResponse.data);
+      // Fetch approved requests (status = 'approved' - ready for release)
+      const approvedResponse = await api.get('/requests', { params: { status: 'approved' } });
+      if (approvedResponse.data.success) {
+        setApproved(approvedResponse.data.data);
+      } else {
+        console.error('Failed to fetch approved requests:', approvedResponse.data.message);
       }
       
       // Fetch current holders (status = 'released' - equipment released)
       const holdersResponse = await transactionService.getAll({ status: 'released' });
       if (holdersResponse.success) {
         setCurrentHolders(holdersResponse.data);
+      } else {
+        console.error('Failed to fetch current holders:', holdersResponse.message);
       }
       
       // Fetch verify returns (status = 'returned' - equipment returned)
       const returnsResponse = await transactionService.getAll({ status: 'returned' });
       if (returnsResponse.success) {
         setVerifyReturns(returnsResponse.data);
+      } else {
+        console.error('Failed to fetch verify returns:', returnsResponse.message);
       }
       
     } catch (err) {
@@ -253,10 +260,10 @@ const ViewApproved = () => {
                     ) : (
                       approved.map((row) => (
                         <tr key={row.id} className="border-b last:border-0">
-                          <td className="py-4">{row.full_name}</td>
-                          <td className="py-4">{row.position}</td>
-                          <td className="py-4">{row.equipment_name}</td>
-                          <td className="py-4 text-green-600">{row.status}</td>
+                          <td className="py-4">{row.full_name || 'N/A'}</td>
+                          <td className="py-4">{row.position || 'N/A'}</td>
+                          <td className="py-4">{row.equipment_name || 'N/A'}</td>
+                          <td className="py-4 text-green-600">{row.status || 'N/A'}</td>
                           <td className="py-4">{row.approved_by_name || 'N/A'}</td>
                           <td className="py-4">
                             <div className="flex items-center justify-end space-x-3">
@@ -321,9 +328,9 @@ const ViewApproved = () => {
                     ) : (
                       currentHolders.map((row) => (
                         <tr key={row.id} className="border-b last:border-0">
-                          <td className="py-4">{row.full_name}</td>
-                          <td className="py-4">{row.position}</td>
-                          <td className="py-4">{row.equipment_name}</td>
+                          <td className="py-4">{row.full_name || 'N/A'}</td>
+                          <td className="py-4">{row.position || 'N/A'}</td>
+                          <td className="py-4">{row.equipment_name || 'N/A'}</td>
                           <td className="py-4">{row.request_mode || 'Onsite'}</td>
                           <td className="py-4 text-red-600">{row.expected_return_date || 'N/A'}</td>
                           <td className="py-4">
@@ -377,9 +384,9 @@ const ViewApproved = () => {
                     ) : (
                       verifyReturns.map((row) => (
                         <tr key={row.id} className="border-b last:border-0">
-                          <td className="py-4">{row.full_name}</td>
-                          <td className="py-4">{row.position}</td>
-                          <td className="py-4">{row.equipment_name}</td>
+                          <td className="py-4">{row.full_name || 'N/A'}</td>
+                          <td className="py-4">{row.position || 'N/A'}</td>
+                          <td className="py-4">{row.equipment_name || 'N/A'}</td>
                           <td className="py-4 text-red-600">{row.return_date || row.expected_return_date || 'N/A'}</td>
                           <td className="py-4">
                             <div className="flex items-center justify-end space-x-3">

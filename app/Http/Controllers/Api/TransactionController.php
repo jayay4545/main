@@ -19,14 +19,14 @@ class TransactionController extends Controller
                 ->where('status', 'pending')
                 ->count();
 
-            // Count current holders (completed transactions)
+            // Count current holders (released transactions)
             $currentHolders = DB::table('transactions')
-                ->where('status', 'completed')
+                ->where('status', 'released')
                 ->count();
 
-            // Count verify returns (overdue transactions)
+            // Count verify returns (returned transactions)
             $verifyReturns = DB::table('transactions')
-                ->where('status', 'overdue')
+                ->where('status', 'returned')
                 ->count();
 
             return response()->json([
@@ -54,7 +54,7 @@ class TransactionController extends Controller
             // Use left joins and coalesce to avoid hard failures if related tables/columns differ
             $query = DB::table('transactions')
                 ->leftJoin('employees', 'transactions.employee_id', '=', 'employees.id')
-                // Fix table names to match migrations: equipment (singular) and categories
+                // Join the correct equipment table used by the current database
                 ->leftJoin('equipment', 'transactions.equipment_id', '=', 'equipment.id')
                 ->leftJoin('categories', 'equipment.category_id', '=', 'categories.id')
                 ->select(
@@ -74,9 +74,9 @@ class TransactionController extends Controller
             $status = request()->query('status');
             if (!empty($status)) {
                 $statusMap = [
-                    'active' => 'pending',      // UI alias for pending transactions awaiting release
-                    'completed' => 'released',  // Old label used in some places -> map to released
-                    'overdue' => 'returned',    // Not a perfect mapping; adjust if needed
+                    'active' => 'pending',
+                    'completed' => 'released',
+                    'overdue' => 'returned',
                 ];
                 $normalized = $statusMap[$status] ?? $status;
                 $query->where('transactions.status', $normalized);
@@ -303,7 +303,7 @@ class TransactionController extends Controller
                 ], 404);
             }
 
-            if ($transaction->status === 'completed') {
+            if ($transaction->status === 'released') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Transaction is already released'
@@ -312,16 +312,16 @@ class TransactionController extends Controller
 
             $validatedData = $request->validate([
                 'release_notes' => 'sometimes|string|max:500',
-                'notes' => 'sometimes|string|max:500', // Alternative field name for frontend compatibility
+                'notes' => 'sometimes|string|max:500',
                 'release_condition' => 'sometimes|in:good_condition,brand_new,damaged',
-                'condition_on_issue' => 'required|string|max:255', // Make required for equipment condition
-                'released_by' => 'sometimes|exists:users,id', // Make optional for now
+                'condition_on_issue' => 'required|string|max:255',
+                'released_by' => 'sometimes|exists:users,id',
                 'release_date' => 'sometimes|date',
             ]);
 
             $updateData = [
-                'status' => 'completed',
-                'issued_at' => now(),
+                'status' => 'released',
+                'release_date' => now(),
                 'updated_at' => now(),
             ];
 
@@ -360,7 +360,7 @@ class TransactionController extends Controller
 
             $updatedTransaction = DB::table('transactions')
                 ->leftJoin('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->leftJoin('equipments', 'transactions.equipment_id', '=', 'equipments.id')
+                ->leftJoin('equipment', 'transactions.equipment_id', '=', 'equipment.id')
                 ->where('transactions.id', $id)
                 ->select(
                     'transactions.*',
@@ -368,9 +368,9 @@ class TransactionController extends Controller
                     DB::raw("COALESCE(employees.last_name, '') as last_name"),
                     DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
                     DB::raw("COALESCE(employees.position, '') as position"),
-                    DB::raw("COALESCE(equipments.name, '') as equipment_name"),
-                    DB::raw("COALESCE(equipments.brand, '') as brand"),
-                    DB::raw("COALESCE(equipments.model, '') as model")
+                    DB::raw("COALESCE(equipment.name, '') as equipment_name"),
+                    DB::raw("COALESCE(equipment.brand, '') as brand"),
+                    DB::raw("COALESCE(equipment.model, '') as model")
                 )
                 ->first();
 
@@ -401,19 +401,21 @@ class TransactionController extends Controller
         try {
             $transaction = DB::table('transactions')
                 ->leftJoin('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->leftJoin('equipments', 'transactions.equipment_id', '=', 'equipments.id')
-                ->leftJoin('users as approved_by_user', 'transactions.processed_by', '=', 'approved_by_user.id')
+                ->leftJoin('equipment', 'transactions.equipment_id', '=', 'equipment.id')
+                // Use released_by as approved_by for compatibility with UI label
+                ->leftJoin('users as approved_by_user', 'transactions.released_by', '=', 'approved_by_user.id')
                 ->where('transactions.id', $id)
                 ->select(
                     'transactions.*',
+                    DB::raw("COALESCE(transactions.release_notes, '') as notes"),
                     'employees.first_name',
                     'employees.last_name',
                     DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
                     'employees.position',
-                    'equipments.name as equipment_name',
-                    'equipments.brand',
-                    'equipments.serial_number',
-                    'equipments.model',
+                    'equipment.name as equipment_name',
+                    'equipment.brand',
+                    'equipment.serial_number',
+                    'equipment.model',
                     'approved_by_user.name as approved_by_name'
                 )
                 ->first();
