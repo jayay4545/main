@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Home, History, Users, BarChart3, Laptop, Mouse, Plus, Package } from 'lucide-react';
-import Taskbar from './components/Taskbar.jsx';
+import Taskbar from '../components/Taskbar.jsx';
 
 const Employee = () => {
   const [activeMenu, setActiveMenu] = useState('Home');

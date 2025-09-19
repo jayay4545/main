@@ -29,52 +29,82 @@ const AddStocks = () => {
   const closeModal = () => setIsAddStocksOpen(false);
 
   return (
-    <div className="h-screen overflow-hidden bg-white flex">
-      <HomeSidebar />
+    <div className="h-screen bg-white flex overflow-hidden">
+      <div className="flex-shrink-0">
+        <HomeSidebar />
+      </div>
       <div className="flex-1 flex flex-col">
         <Taskbar title="Equipment" />
 
-        {/* Content */}
-        <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">
-          <div className="flex-1 min-h-0 overflow-y-auto">
+        <main className="flex-1 px-10 py-6 overflow-y-auto">
           <h2 className="text-3xl font-bold text-blue-600">Equipment</h2>
 
           <div className="mt-3 flex items-center justify-between">
             <span className="text-gray-700 text-sm">New stocks</span>
             <div className="space-x-3">
-              <button onClick={() => setIsAddStocksOpen(true)} className="px-4 py-2 rounded-md bg-blue-100 text-blue-700 text-sm hover:bg-blue-600 hover:text-white">Add Stocks</button>
-              <button onClick={() => setIsAddItemOpen(true)} className="px-4 py-2 rounded-md bg-blue-100 text-blue-700 text-sm hover:bg-blue-600 hover:text-white">Add Item</button>
+              <button 
+                onClick={() => setIsAddStocksOpen(true)} 
+                className="px-4 py-2 rounded-md bg-blue-100 text-blue-700 text-sm hover:bg-blue-600 hover:text-white"
+              >
+                Add Stocks
+              </button>
+              <button 
+                onClick={() => setIsAddItemOpen(true)} 
+                className="px-4 py-2 rounded-md bg-blue-100 text-blue-700 text-sm hover:bg-blue-600 hover:text-white"
+              >
+                Add Item
+              </button>
             </div>
           </div>
 
-          {/* Table */}
+          {/* Table with proper HTML structure */}
           <div className="mt-6">
-            <div className="grid grid-cols-12 text-sm text-gray-600 px-2">
-              <div className="col-span-3">Items</div>
-              <div className="col-span-3">Serial Number</div>
-              <div className="col-span-3">Stored Date</div>
-              <div className="col-span-1">Status</div>
-              <div className="col-span-1">Price</div>
-              <div className="col-span-1">Actions</div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Items</th>
+                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Serial Number</th>
+                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Stored Date</th>
+                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Status</th>
+                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Price</th>
+                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, index) => (
+                    <tr 
+                      key={row.id}
+                      className={`
+                        ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} 
+                        hover:bg-blue-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0
+                      `}
+                    >
+                      <td className="py-4 px-6 font-medium text-gray-900">{row.item}</td>
+                      <td className="py-4 px-6 text-gray-700">{row.serial}</td>
+                      <td className="py-4 px-6 text-gray-700">{row.date}</td>
+                      <td className="py-4 px-6">
+                        <span className="px-3 py-1 rounded-full text-xs bg-green-100 text-green-800 font-medium">
+                          {row.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-gray-700 font-medium">{row.price}</td>
+                      <td className="py-4 px-6">
+                        <button 
+                          className="p-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                          title="Copy"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-
-            <div className="mt-2 divide-y">
-              {rows.map((r) => (
-                <div key={r.id} className="grid grid-cols-12 items-center px-3 py-3 hover:bg-gray-50 rounded-lg">
-                  <div className="col-span-3">{r.item}</div>
-                  <div className="col-span-3">{r.serial}</div>
-                  <div className="col-span-3">{r.date}</div>
-                  <div className="col-span-1 text-green-600">{r.status}</div>
-                  <div className="col-span-1">{r.price}</div>
-                  <div className="col-span-1 flex items-center space-x-2 text-gray-600">
-                    <Copy className="h-4 w-4" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
           </div>
         </main>
+
         {isAddStocksOpen && (
           <AddStocksModal
             onClose={closeModal}
@@ -96,9 +126,6 @@ const AddStocks = () => {
 
 export default AddStocks;
 
-
-
-
 // Modal Component
 const AddStocksModal = ({ onClose, selectedItem, setSelectedItem, serialNumbers, addSerialRow, removeSerialRow, updateSerial }) => {
   return (
@@ -114,7 +141,11 @@ const AddStocksModal = ({ onClose, selectedItem, setSelectedItem, serialNumbers,
         <div className="mt-5">
           <label className="text-sm text-gray-600">Item</label>
           <div className="mt-2 flex items-center space-x-3">
-            <select value={selectedItem} onChange={(e) => setSelectedItem(e.target.value)} className="w-60 px-3 py-2 rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select 
+              value={selectedItem} 
+              onChange={(e) => setSelectedItem(e.target.value)} 
+              className="w-60 px-3 py-2 rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               <option>LENOVO</option>
               <option>ACER</option>
               <option>ASUS</option>
@@ -129,9 +160,25 @@ const AddStocksModal = ({ onClose, selectedItem, setSelectedItem, serialNumbers,
           {serialNumbers.map((value, idx) => (
             <div key={idx} className="flex items-center space-x-3">
               <div className="w-28 text-sm text-gray-600">Serial No.</div>
-              <input value={value} onChange={(e) => updateSerial(idx, e.target.value)} placeholder="4354354" className="flex-1 px-3 py-2 rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <button onClick={() => addSerialRow()} className="p-1.5 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white"><Plus className="h-4 w-4" /></button>
-              <button onClick={() => removeSerialRow(idx)} disabled={serialNumbers.length <= 1} className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-40"><Minus className="h-4 w-4" /></button>
+              <input 
+                value={value} 
+                onChange={(e) => updateSerial(idx, e.target.value)} 
+                placeholder="4354354" 
+                className="flex-1 px-3 py-2 rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+              />
+              <button 
+                onClick={() => addSerialRow()} 
+                className="p-1.5 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={() => removeSerialRow(idx)} 
+                disabled={serialNumbers.length <= 1} 
+                className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-40"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
             </div>
           ))}
         </div>
@@ -222,4 +269,3 @@ const AddItemModal = ({ onClose }) => {
     </div>
   );
 };
-

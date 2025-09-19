@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import Employee from './Employee.jsx';
+import Employee from './Users/Employee.jsx';
 import EmployeePage from './EmployeePage.jsx';
 import SimpleEmployee from './SimpleEmployee';
 import ViewRequest from './ViewRequest';

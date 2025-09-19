@@ -161,17 +161,15 @@ const ViewApproved = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex">
-      {/* FIXED: Ensure HomeSidebar is always rendered with proper styling */}
+     <div className="h-screen overflow-hidden bg-white flex">
       <div className="flex-shrink-0">
         <HomeSidebar />
       </div>
       
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 px-10 py-6 overflow-y-auto min-h-0">
         <Taskbar title="Transaction" />
 
-        <main className="flex-1 px-10 py-6 overflow-y-auto">
+        <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">
           <h2 className="text-4xl font-bold text-blue-600">Transaction</h2>
           <h3 className="text-base font-semibold text-gray-700 mt-3 tracking-wide">QUICK ACCESS</h3>
 

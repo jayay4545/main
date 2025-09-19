@@ -273,7 +273,7 @@ const ViewRequest = () => {
   return (
     <div className="h-screen overflow-hidden bg-white flex">
       <HomeSidebar />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 px-10 py-6 overflow-y-auto min-h-0">
       <Taskbar title="Transaction" />
 
       <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">
