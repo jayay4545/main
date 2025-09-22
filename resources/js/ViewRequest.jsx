@@ -15,6 +15,31 @@ const ViewRequest = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  useEffect(() => {
+    // Fetch pending and approved requests from backend
+    const fetchRequests = async () => {
+      try {
+        setLoading(true);
+        const pendingRes = await fetch('/api/requests?status=pending');
+        const approvedRes = await fetch('/api/requests?status=approved');
+        const pendingData = await pendingRes.json();
+        const approvedData = await approvedRes.json();
+        if (pendingData.success && Array.isArray(pendingData.data.data)) {
+          setPendingRequests(pendingData.data.data);
+        }
+        if (approvedData.success && Array.isArray(approvedData.data.data)) {
+          setApprovedRequests(approvedData.data.data);
+        }
+      } catch (e) {
+        console.error('Failed to fetch requests:', e);
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRequests();
+  }, []);
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [view, setView] = useState('viewRequest');
   const [currentHolders, setCurrentHolders] = useState([]);
@@ -249,8 +274,30 @@ const ViewRequest = () => {
           categoryName: t.category_name || null,
         }));
         setCurrentHolders(mapped);
+
+        // If there are transactions, show the Current holder view automatically
+        if (mapped.length > 0) {
+          setView('currentHolder');
+        }
+
+        // Populate approved requests from transactions (statuses like 'released' or 'completed')
+        const approved = rows.filter(r => ['released', 'completed', 'approved'].includes((r.status || '').toString().toLowerCase()))
+          .map((t) => ({
+            id: t.id,
+            name: t.full_name || t.name || '',
+            position: t.position || '',
+            item: t.equipment_name || t.item || '',
+            status: t.status || 'approved',
+            approvedBy: t.released_by || t.approved_by || null,
+            approvedAt: t.release_date || t.issued_at || t.created_at || null,
+          }));
+
+        if (approved.length > 0) {
+          setApprovedRequests(approved);
+        }
       } else {
         console.error('Failed to fetch transactions:', transactionsResponse.data.message);
+        setCurrentHolders([]);
       }
       
     } catch (err) {

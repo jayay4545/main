@@ -26,7 +26,9 @@ return new class extends Migration
             $table->date('warranty_expiry')->nullable(); // Warranty end date
             $table->text('notes')->nullable(); // Additional notes
             $table->string('location')->nullable(); // Physical location
-            $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
+            $table->foreignId('category_id')->nullable()->constrained('equipment_categories')->nullOnDelete();
+            $table->string('item_image')->nullable();
+            $table->string('receipt_image')->nullable();
             $table->timestamps();
         });
     }

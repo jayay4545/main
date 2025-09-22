@@ -11,12 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->string('description')->nullable();
-            $table->string('image')->nullable(); // Stores image file path
-            $table->timestamps();
+        Schema::table('equipment', function (Blueprint $table) {
+            $table->string('item_image')->nullable()->after('location');
+            $table->string('receipt_image')->nullable()->after('item_image');
         });
     }
 
@@ -25,6 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('categories');
+        Schema::table('equipment', function (Blueprint $table) {
+            $table->dropColumn(['item_image', 'receipt_image']);
+        });
     }
 };

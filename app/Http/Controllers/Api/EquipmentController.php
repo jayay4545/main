@@ -4,10 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Equipment;
-use App\Models\EquipmentCategory;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Storage;
 
 class EquipmentController extends Controller
 {
@@ -67,7 +68,7 @@ class EquipmentController extends Controller
                 'brand' => 'required|string|max:255',
                 'model' => 'nullable|string|max:255',
                 'specifications' => 'nullable|string',
-                'serial_number' => 'nullable|string|max:255|unique:equipment',
+                'serial_number' => 'required|string|max:255|unique:equipment',
                 'asset_tag' => 'nullable|string|max:255|unique:equipment',
                 'status' => 'required|in:available,in_use,maintenance,retired',
                 'condition' => 'required|in:excellent,good,fair,poor',
@@ -76,8 +77,39 @@ class EquipmentController extends Controller
                 'warranty_expiry' => 'nullable|date|after:purchase_date',
                 'notes' => 'nullable|string',
                 'location' => 'nullable|string|max:255',
-                'category_id' => 'nullable|exists:equipment_categories,id',
+                'category_id' => 'nullable|exists:categories,id',
+                'item_image' => 'required|image|max:5120',
+                'receipt_image' => 'required|image|max:5120',
             ]);
+
+            // Ensure directories exist
+            if (!Storage::disk('public')->exists('equipment/item_images')) {
+                Storage::disk('public')->makeDirectory('equipment/item_images');
+            }
+            if (!Storage::disk('public')->exists('equipment/receipt_images')) {
+                Storage::disk('public')->makeDirectory('equipment/receipt_images');
+            }
+
+            // Handle file uploads with unique filenames
+            try {
+                $itemImageFile = $request->file('item_image');
+                $receiptImageFile = $request->file('receipt_image');
+                $itemImagePath = Storage::disk('public')->putFile('equipment/item_images', $itemImageFile);
+                $receiptImagePath = Storage::disk('public')->putFile('equipment/receipt_images', $receiptImageFile);
+                if (!$itemImagePath || !$receiptImagePath) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'File upload failed.'
+                    ], 500);
+                }
+                $validated['item_image'] = $itemImagePath;
+                $validated['receipt_image'] = $receiptImagePath;
+            } catch (\Exception $ex) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File upload error: ' . $ex->getMessage()
+                ], 500);
+            }
 
             $equipment = Equipment::create($validated);
             $equipment->load('category');
@@ -134,8 +166,25 @@ class EquipmentController extends Controller
                 'warranty_expiry' => 'nullable|date|after:purchase_date',
                 'notes' => 'nullable|string',
                 'location' => 'nullable|string|max:255',
-                'category_id' => 'nullable|exists:equipment_categories,id',
+                'category_id' => 'nullable|exists:categories,id',
+                'item_image' => 'nullable|image|max:5120',
+                'receipt_image' => 'nullable|image|max:5120',
             ]);
+
+            // Handle file uploads and remove old files if present
+            if ($request->hasFile('item_image')) {
+                if ($equipment->item_image) {
+                    Storage::disk('public')->delete($equipment->item_image);
+                }
+                $validated['item_image'] = $request->file('item_image')->store('equipment/item_images', 'public');
+            }
+
+            if ($request->hasFile('receipt_image')) {
+                if ($equipment->receipt_image) {
+                    Storage::disk('public')->delete($equipment->receipt_image);
+                }
+                $validated['receipt_image'] = $request->file('receipt_image')->store('equipment/receipt_images', 'public');
+            }
 
             $equipment->update($validated);
             $equipment->load('category');

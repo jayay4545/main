@@ -9,6 +9,21 @@ import api from './services/api';
 
 const ViewApproved = () => {
   const [approved, setApproved] = useState([]);
+  useEffect(() => {
+    // Fetch approved requests from backend
+    const fetchApproved = async () => {
+      try {
+        const res = await fetch('/api/requests?status=approved');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data.data)) {
+          setApproved(data.data.data);
+        }
+      } catch (e) {
+        console.error('Failed to fetch approved requests:', e);
+      }
+    };
+    fetchApproved();
+  }, []);
   const [currentHolders, setCurrentHolders] = useState([]);
   const [verifyReturns, setVerifyReturns] = useState([]);
   const [dashboardStats, setDashboardStats] = useState({

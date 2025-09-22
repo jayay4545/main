@@ -20,6 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             \Illuminate\Http\Middleware\HandleCors::class,
         ]);
+
+        // Register global middleware for storage access
+        $middleware->append(\App\Http\Middleware\PublicStorageAccess::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
