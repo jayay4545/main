@@ -342,8 +342,8 @@ const ViewRequest = () => {
 
       <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">
         <div className="flex-1 min-h-0 overflow-y-auto">
-        <h2 className="text-4xl font-bold text-gray-900">Transaction</h2>
-        <h3 className="text-base font-semibold text-blue-600 mt-3 tracking-wide">QUICK ACCESS</h3>
+        <h2 className="text-4xl font-bold  text-blue-600">Transaction</h2>
+        <h3 className="text-base font-semibold text-gray-700 mt-3 tracking-wide">QUICK ACCESS</h3>
 
 
           {/* Stats Cards */}

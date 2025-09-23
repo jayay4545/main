@@ -169,12 +169,12 @@ const RoleManagementPage = () => {
         {/* Left Panel - Admin Lists */}
         <div className="flex-1 min-w-0">
           <div className="mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold text-blue-600">Role Management</h1>
-            <p className="text-sm text-gray-500 mt-2">Admin Lists</p>
+           <h1 className="text-3xl font-extrabold text-blue-600">Role Management</h1>
+          <p className="text-2xl font-semibold text-gray-500 mt-4">Admin Lists</p>
           </div>
           
           {/* Table Headers */}
-          <div className="grid grid-cols-2 gap-4 mb-4 text-sm font-medium text-gray-500 uppercase tracking-wider">
+          <div className="grid grid-cols-2 gap-4 mb-4 text-sm font-medium text-gray-800 uppercase tracking-wider">
             <div>Names</div>
             <div>Positions</div>
           </div>
@@ -192,8 +192,8 @@ const RoleManagementPage = () => {
                 }`}
               >
                 <div className="grid grid-cols-2 items-center">
-                  <div className="font-medium text-gray-900 truncate">{admin.name}</div>
-                  <div className="text-right text-gray-600 uppercase text-xs tracking-wide">{admin.position}</div>
+                  <div className="font-semibold text-gray-600 truncate">{admin.name}</div>
+                  <div className="text-right text-gray-900 uppercase text-meduim tracking-wide">{admin.position}</div>
                 </div>
               </div>
             ))}
