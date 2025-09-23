@@ -13,23 +13,25 @@ class TransactionsSeeder extends Seeder
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         DB::table('transactions')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        
+        // Create transactions for approved requests
         DB::table('transactions')->insert([
             [
-                'transaction_number' => 'TRX-20250918-001',
-                'user_id' => 1,
-                'employee_id' => 1,
-                'equipment_id' => 1,
-                'request_id' => 1,
+                'transaction_number' => 'TRX-' . date('Ymd') . '-001',
+                'user_id' => 1, // Admin user (since that's what we have)
+                'employee_id' => 1, // First employee
+                'equipment_id' => 1, // First equipment
+                'request_id' => null, // No request for now
                 'status' => 'released',
                 'request_mode' => 'on_site',
                 'release_condition' => 'good_condition',
-                'release_date' => Carbon::now()->subDays(2),
-                'released_by' => 1,
+                'release_date' => Carbon::now(),
+                'released_by' => 1, // Released by admin
                 'return_condition' => null,
                 'return_date' => null,
                 'expected_return_date' => Carbon::now()->addDays(30),
                 'received_by' => null,
-                'release_notes' => 'Issued for project use',
+                'release_notes' => 'Development laptop issued',
                 'return_notes' => null,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),

@@ -4,11 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\Api\TransactionController;
-<<<<<<< Updated upstream
 use App\Http\Controllers\Api\RequestController;
-=======
 use App\Http\Controllers\Api\EquipmentController;
->>>>>>> Stashed changes
 
 Route::get('/user', function (Request $request) {
     return $request->user();

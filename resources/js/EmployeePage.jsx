@@ -1,9 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import HomeSidebar from './HomeSidebar';
 import { Eye, Pencil, Trash2 } from 'lucide-react';
 import Taskbar from './components/Taskbar.jsx';
-
-import { useEffect, useState } from 'react';
 
 const getBadgeColor = (name) => {
   // Simple color assignment based on first letter

@@ -26,10 +26,16 @@ return new class extends Migration
             $table->date('warranty_expiry')->nullable(); // Warranty end date
             $table->text('notes')->nullable(); // Additional notes
             $table->string('location')->nullable(); // Physical location
-            $table->foreignId('category_id')->nullable()->constrained('equipment_categories')->nullOnDelete();
+            $table->unsignedBigInteger('category_id')->nullable();
             $table->string('item_image')->nullable();
             $table->string('receipt_image')->nullable();
             $table->timestamps();
+
+            // Add foreign key constraint separately
+            $table->foreign('category_id')
+                  ->references('id')
+                  ->on('categories')  // Using categories table instead of equipment_categories
+                  ->nullOnDelete();
         });
     }
 
