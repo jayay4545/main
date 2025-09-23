@@ -101,41 +101,59 @@ const EmployeePage = () => {
       <HomeSidebar />
       <div className="flex-1 flex flex-col">
         <Taskbar title="Employees" />
-        <div className="px-10 pt-4 flex justify-end">
+
+         <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">
+          <h2 className="text-4xl font-bold text-blue-600">Employees</h2>
+
+        <div className="px-10 pt-4 flex justify-end mb-6">
           <button onClick={() => setIsAddOpen(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Add New</button>
         </div>
 
-        {/* Table */}
-        <main className="px-10 pb-10 flex-1 min-h-0 overflow-y-auto">
-          <div className="grid grid-cols-12 items-center text-gray-600 text-sm border-b border-gray-200 pb-2">
-            <div className="col-span-6 pl-2">Name</div>
-            <div className="col-span-2">Position</div>
-            <div className="col-span-2">Department</div>
-            <div className="col-span-2 text-right pr-4">Actions</div>
-          </div>
-
-          <div className="divide-y">
-            {employees.length === 0 ? (
-              <div className="py-6 text-center text-gray-400">No employees found.</div>
-            ) : (
-              employees.map((e) => (
-                <div key={e.id} className="grid grid-cols-12 items-center py-3">
-                  <div className="col-span-6 flex items-center space-x-3">
-                    <div className={`w-6 h-6 ${e.color} rounded-full text-white text-xs flex items-center justify-center`}>{e.badge}</div>
-                    <div className="text-gray-800">{e.name}</div>
-                  </div>
-                  <div className="col-span-2 text-gray-700">{e.position}</div>
-                  <div className="col-span-2 text-gray-700">{e.department}</div>
-                  <div className="col-span-2 flex justify-end space-x-4 text-gray-500 pr-2">
-                    <Eye className="h-4 w-4 cursor-pointer" />
-                    <Pencil className="h-4 w-4 cursor-pointer" />
-                    <Trash2 className="h-4 w-4 cursor-pointer" />
-                  </div>
+      {/* Table */}
+<main className="px-10 pb-10 flex-1 min-h-0 overflow-y-auto">
+  <div className="overflow-x-auto rounded-lg border border-gray-200">
+    <table className="min-w-full text-sm text-left text-gray-600">
+      <thead className="bg-gray-100 text-gray-700 text-sm font-semibold">
+        <tr>
+          <th className="px-4 py-3">Name</th>
+          <th className="px-4 py-3">Position</th>
+          <th className="px-4 py-3">Department</th>
+          <th className="px-4 py-3 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-gray-200">
+        {employees.length === 0 ? (
+          <tr>
+            <td colSpan="4" className="px-4 py-6 text-center text-gray-400">
+              No employees found.
+            </td>
+          </tr>
+        ) : (
+          employees.map((e) => (
+            <tr key={e.id} className="hover:bg-blue-50">
+              <td className="px-4 py-3 flex items-center space-x-3">
+                <div className={`w-8 h-8 ${e.color} rounded-full text-white text-sm flex items-center justify-center`}>
+                  {e.badge}
                 </div>
-              ))
-            )}
-          </div>
-        </main>
+                <span className="text-gray-800">{e.name}</span>
+              </td>
+              <td className="px-4 py-3 text-gray-700">{e.position}</td>
+              <td className="px-4 py-3 text-gray-700">{e.department}</td>
+              <td className="px-4 py-3 text-right">
+                <div className="flex justify-end space-x-4 text-gray-500">
+                  <Eye className="h-4 w-4 cursor-pointer hover:text-blue-600" />
+                  <Pencil className="h-4 w-4 cursor-pointer hover:text-yellow-600" />
+                  <Trash2 className="h-4 w-4 cursor-pointer hover:text-red-600" />
+                </div>
+              </td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+  </div>
+</main>
+
         {isAddOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/30" onClick={closeModal} />
@@ -179,6 +197,7 @@ const EmployeePage = () => {
             </div>
           </div>
         )}
+        </main>
       </div>
     </div>
   );

@@ -9,6 +9,8 @@ import api from './services/api';
 
 const ViewApproved = () => {
   const [approved, setApproved] = useState([]);
+  const [clickedItems, setClickedItems] = useState(new Set()); // Track clicked items
+  
   useEffect(() => {
     // Fetch approved requests from backend
     const fetchApproved = async () => {
@@ -24,6 +26,7 @@ const ViewApproved = () => {
     };
     fetchApproved();
   }, []);
+
   const [currentHolders, setCurrentHolders] = useState([]);
   const [verifyReturns, setVerifyReturns] = useState([]);
   const [dashboardStats, setDashboardStats] = useState({
@@ -46,6 +49,18 @@ const ViewApproved = () => {
     isOpen: false,
     transactionData: null
   });
+
+  // Track clicked items
+  const handleRowClick = (itemId, view) => {
+    const key = `${view}-${itemId}`;
+    setClickedItems(prev => new Set([...prev, key]));
+  };
+
+  // Check if item was clicked
+  const isItemClicked = (itemId, view) => {
+    const key = `${view}-${itemId}`;
+    return clickedItems.has(key);
+  };
 
   // Fetch data on component mount
   useEffect(() => {
@@ -188,26 +203,28 @@ const ViewApproved = () => {
           <h2 className="text-4xl font-bold text-blue-600">Transaction</h2>
           <h3 className="text-base font-semibold text-gray-700 mt-3 tracking-wide">QUICK ACCESS</h3>
 
-          <div className="grid grid-cols-3 gap-6 mt-4">
-            <div className="bg-blue-600 text-white rounded-2xl p-6 shadow flex flex-col">
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-3 gap-9 mt-6">
+            <div className="bg-gradient-to-b from-[#0064FF] to-[#003C99] text-white rounded-2xl p-3 shadow flex flex-col h-26">
               <h4 className="text-sm uppercase tracking-wider opacity-80">New Requests</h4>
-              <div className="mt-4 flex items-center justify-between">
+              <div className="mt-2 flex items-center justify-between">
                 <p className="text-5xl font-bold">{loading ? '...' : dashboardStats.new_requests}</p>
-                <div className="w-10 h-10 rounded-full bg-white/30"></div>
+                <div className="w-6 h-6 rounded-full bg-white/30"></div>
               </div>
             </div>
-            <div className="bg-gray-100 rounded-2xl p-6 shadow flex flex-col">
+            <div className="bg-gray-100 rounded-2xl p-3 shadow flex flex-col h-26">
               <h4 className="text-sm font-semibold text-gray-600">Current holder</h4>
-              <div className="mt-4 flex items-center justify-between">
-                <p className="text-4xl font-bold text-gray-900">{loading ? '...' : dashboardStats.current_holders}</p>
-                <div className="w-10 h-10 rounded-full bg-gray-300"></div>
+              <div className="mt-2 flex items-center justify-between">
+                <p className="text-2xl font-bold text-gray-900">{loading ? '...' : dashboardStats.current_holders}</p>
+                <div className="w-6 h-6 rounded-full bg-gray-300"></div>
               </div>
             </div>
-            <div className="bg-gray-100 rounded-2xl p-6 shadow flex flex-col">
+            <div className="bg-gray-100 rounded-2xl p-6 shadow flex flex-col h-26">
               <h4 className="text-sm font-semibold text-gray-600">Verify Return</h4>
-              <div className="mt-4 flex items-center justify-between">
-                <p className="text-4xl font-bold text-gray-900">{loading ? '...' : dashboardStats.verify_returns}</p>
-                <div className="w-10 h-10 rounded-full bg-gray-300"></div>
+              <div className="mt-2 flex items-center justify-between">
+                <p className="text-2xl font-bold text-gray-900">{loading ? '...' : dashboardStats.verify_returns}</p>
+                <div className="w-6 h-6 rounded-full bg-gray-300"></div>
               </div>
             </div>
           </div>
@@ -272,7 +289,15 @@ const ViewApproved = () => {
                       </tr>
                     ) : (
                       approved.map((row) => (
-                        <tr key={row.id} className="border-b last:border-0">
+                        <tr 
+                          key={row.id} 
+                          onClick={() => handleRowClick(row.id, 'viewApproved')}
+                          className={`border-b last:border-0 cursor-pointer transition-colors duration-200 ${
+                            isItemClicked(row.id, 'viewApproved') 
+                              ? 'bg-gray-200 hover:bg-blue-50' 
+                              : 'hover:bg-blue-50'
+                          }`}
+                        >
                           <td className="py-4">{row.full_name || 'N/A'}</td>
                           <td className="py-4">{row.position || 'N/A'}</td>
                           <td className="py-4">{row.equipment_name || 'N/A'}</td>
@@ -281,14 +306,20 @@ const ViewApproved = () => {
                           <td className="py-4">
                             <div className="flex items-center justify-end space-x-3">
                               <button
-                                onClick={() => handlePrint(row)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlePrint(row);
+                                }}
                                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                                 title="Print Receipt"
                               >
                                 <Printer className="h-5 w-5 text-gray-500 hover:text-gray-700" />
                               </button>
                               <button 
-                                onClick={() => openConfirmModal('release', row)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openConfirmModal('release', row);
+                                }}
                                 className="px-3 py-1 bg-green-600 text-white rounded-full text-xs hover:bg-green-700 transition-colors"
                               >
                                 Release
@@ -340,7 +371,15 @@ const ViewApproved = () => {
                       </tr>
                     ) : (
                       currentHolders.map((row) => (
-                        <tr key={row.id} className="border-b last:border-0">
+                        <tr 
+                          key={row.id}
+                          onClick={() => handleRowClick(row.id, 'currentHolder')}
+                          className={`border-b last:border-0 cursor-pointer transition-colors duration-200 ${
+                            isItemClicked(row.id, 'currentHolder') 
+                              ? 'bg-gray-200 hover:bg-blue-50' 
+                              : 'hover:bg-blue-50'
+                          }`}
+                        >
                           <td className="py-4">{row.full_name || 'N/A'}</td>
                           <td className="py-4">{row.position || 'N/A'}</td>
                           <td className="py-4">{row.equipment_name || 'N/A'}</td>
@@ -396,7 +435,15 @@ const ViewApproved = () => {
                       </tr>
                     ) : (
                       verifyReturns.map((row) => (
-                        <tr key={row.id} className="border-b last:border-0">
+                        <tr 
+                          key={row.id}
+                          onClick={() => handleRowClick(row.id, 'verifyReturn')}
+                          className={`border-b last:border-0 cursor-pointer transition-colors duration-200 ${
+                            isItemClicked(row.id, 'verifyReturn') 
+                              ? 'bg-gray-200 hover:bg-blue-50' 
+                              : 'hover:bg-blue-50'
+                          }`}
+                        >
                           <td className="py-4">{row.full_name || 'N/A'}</td>
                           <td className="py-4">{row.position || 'N/A'}</td>
                           <td className="py-4">{row.equipment_name || 'N/A'}</td>

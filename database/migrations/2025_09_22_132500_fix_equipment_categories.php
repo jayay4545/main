@@ -11,20 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // First, create the equipment_categories table
-        Schema::create('equipment_categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->text('description')->nullable();
-            $table->timestamps();
-        });
+        // First, create the equipment_categories table if it doesn't exist
+        if (!Schema::hasTable('equipment_categories')) {
+            Schema::create('equipment_categories', function (Blueprint $table) {
+                $table->id();
+                $table->string('name')->unique();
+                $table->text('description')->nullable();
+                $table->timestamps();
+            });
+        }
 
         // Now update the equipment table to use the new categories
         Schema::table('equipment', function (Blueprint $table) {
             $table->dropForeign(['category_id']);
             $table->foreign('category_id')
                   ->references('id')
-                  ->on('equipment_categories')
+                  ->on('categories')
                   ->nullOnDelete();
         });
     }

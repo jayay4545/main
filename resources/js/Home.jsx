@@ -48,7 +48,7 @@ const HomePage = () => {
           <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="grid grid-cols-2 gap-6 mt-6">
             {/* Equipment by Category */}
-            <div className="bg-white rounded-xl shadow p-6">
+           <div className="bg-white rounded-xl drop-shadow-[0_4px_6px_rgba(59,130,246,0.4)] p-6 py-3 px-4">
               <h3 className="text-lg font-semibold mb-4">Equipment by Category</h3>
               <table className="w-full text-sm">
                 <thead>
@@ -83,7 +83,7 @@ const HomePage = () => {
             </div>
 
             {/* New Arrival */}
-            <div className="bg-white rounded-xl shadow p-6">
+            <div className="bg-white rounded-xl drop-shadow-[0_4px_6px_rgba(59,130,246,0.4)] p-6 py-3 px-4">
               <h3 className="text-lg font-semibold mb-4">New Arrival</h3>
               <table className="w-full text-sm">
                 <thead>
@@ -121,12 +121,12 @@ const HomePage = () => {
           {/* Additional Boxes */}
           <div className="grid grid-cols-2 gap-6 mt-6">
             {/* Report Overview */}
-            <div className="bg-white rounded-xl shadow p-6">
+           <div className="bg-white rounded-xl drop-shadow-[0_4px_6px_rgba(59,130,246,0.4)] p-6 py-3 px-4">
               <h3 className="text-lg font-semibold mb-4">Report Overview</h3>
               <div className="h-40 bg-gray-100 rounded"></div>
             </div>
             {/* Add Category */}
-            <div className="bg-white rounded-xl shadow p-6">
+           <div className="bg-white rounded-xl drop-shadow-[0_4px_6px_rgba(59,130,246,0.4)] p-6 py-3 px-4">
               <h3 className="text-lg font-semibold mb-4">Add Category</h3>
               <div className="h-40 bg-gray-100 rounded"></div>
             </div>
