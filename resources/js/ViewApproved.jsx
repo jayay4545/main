@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Printer, ChevronDown } from 'lucide-react';
+import { Search, Printer, ChevronDown, Eye, Pencil } from 'lucide-react';
 import Taskbar from './components/Taskbar.jsx';
 import HomeSidebar from './HomeSidebar';
 import ConfirmModal from './components/ConfirmModal.jsx';
 import PrintReceipt from './components/PrintReceipt.jsx';
 import { transactionService, apiUtils } from './services/api.js';
 import api from './services/api';
+import ViewTransactionModal from './components/ViewTransactionModal';
+import EditTransactionModal from './components/EditTransactionModal';
 
 const ViewApproved = () => {
   const [approved, setApproved] = useState([]);
@@ -28,6 +30,16 @@ const ViewApproved = () => {
     transactionData: null
   });
   const [printModal, setPrintModal] = useState({
+    isOpen: false,
+    transactionData: null
+  });
+
+  // View/Edit transaction modals (to mirror ViewRequest current holder UX)
+  const [viewModal, setViewModal] = useState({
+    isOpen: false,
+    transactionData: null
+  });
+  const [editModal, setEditModal] = useState({
     isOpen: false,
     transactionData: null
   });
@@ -59,7 +71,28 @@ const ViewApproved = () => {
       // Fetch current holders (status = 'released' - equipment released)
       const holdersResponse = await transactionService.getAll({ status: 'released' });
       if (holdersResponse.success) {
-        setCurrentHolders(holdersResponse.data);
+        const rows = Array.isArray(holdersResponse.data) ? holdersResponse.data : [];
+        const mapped = rows.map((t) => ({
+          id: t.id,
+          name: t.full_name || t.name || '',
+          position: t.position || '',
+          item: t.equipment_name || t.item || '',
+          requestMode: t.request_mode || 'onsite',
+          requestDate: t.created_at,
+          transactionNumber: t.transaction_number || null,
+          status: t.status || 'released',
+          expectedReturnDate: t.expected_return_date || null,
+          releaseDate: t.release_date || t.issued_at || null,
+          returnDate: t.return_date || t.returned_at || null,
+          releaseCondition: t.release_condition || t.condition_on_issue || null,
+          returnCondition: t.return_condition || t.condition_on_return || null,
+          releaseNotes: t.release_notes || t.notes || '',
+          returnNotes: t.return_notes || '',
+          brand: t.brand || null,
+          model: t.model || null,
+          categoryName: t.category_name || null,
+        }));
+        setCurrentHolders(mapped);
       } else {
         console.error('Failed to fetch current holders:', holdersResponse.message);
       }
@@ -115,6 +148,33 @@ const ViewApproved = () => {
       const errorMessage = err.response?.data?.message || err.message || 'Unknown error occurred';
       alert('Error releasing equipment: ' + errorMessage);
     }
+  };
+
+  // Handlers to open/close view/edit modals and update a transaction in list
+  const handleViewTransaction = (transactionId) => {
+    const transaction = currentHolders.find((t) => t.id === transactionId);
+    if (transaction) {
+      setViewModal({ isOpen: true, transactionData: transaction });
+    }
+  };
+
+  const handleEditTransaction = (transactionId) => {
+    const transaction = currentHolders.find((t) => t.id === transactionId);
+    if (transaction) {
+      setEditModal({ isOpen: true, transactionData: transaction });
+    }
+  };
+
+  const handleCloseViewModal = () => {
+    setViewModal({ isOpen: false, transactionData: null });
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModal({ isOpen: false, transactionData: null });
+  };
+
+  const handleTransactionUpdate = (updatedTransaction) => {
+    setCurrentHolders((prev) => prev.map((t) => (t.id === updatedTransaction.id ? { ...t, ...updatedTransaction } : t)));
   };
 
   // Handle print action
@@ -319,7 +379,7 @@ const ViewApproved = () => {
                           Error: {error}
                         </td>
                       </tr>
-                    ) : currentHolders.length === 0 ? (
+                  ) : currentHolders.length === 0 ? (
                       <tr>
                         <td colSpan="6" className="py-8 text-center text-gray-500">
                           No current holders found
@@ -328,15 +388,21 @@ const ViewApproved = () => {
                     ) : (
                       currentHolders.map((row) => (
                         <tr key={row.id} className="border-b last:border-0">
-                          <td className="py-4">{row.full_name || 'N/A'}</td>
+                          <td className="py-4">
+                            <div className="font-medium text-gray-900">{row.name || 'N/A'}</div>
+                          </td>
                           <td className="py-4">{row.position || 'N/A'}</td>
-                          <td className="py-4">{row.equipment_name || 'N/A'}</td>
-                          <td className="py-4">{row.request_mode || 'Onsite'}</td>
-                          <td className="py-4 text-red-600">{row.expected_return_date || 'N/A'}</td>
+                          <td className="py-4">{row.item || 'N/A'}</td>
+                          <td className="py-4">{row.requestMode === 'work_from_home' ? 'W.F.H' : 'Onsite'}</td>
+                          <td className="py-4 text-red-600">{row.expectedReturnDate ? new Date(row.expectedReturnDate).toLocaleDateString() : 'N/A'}</td>
                           <td className="py-4">
                             <div className="flex items-center justify-end space-x-4 text-gray-700">
-                              <span className="px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-700">Active</span>
-                              <span className="px-3 py-1 rounded-full text-xs bg-green-600 text-white">Released</span>
+                              <button onClick={() => handleViewTransaction(row.id)} className="p-1 hover:bg-blue-50 rounded transition-colors" title="View Transaction Details">
+                                <Eye className="h-5 w-5 cursor-pointer hover:text-blue-600" />
+                              </button>
+                              <button onClick={() => handleEditTransaction(row.id)} className="p-1 hover:bg-blue-50 rounded transition-colors" title="Edit Transaction">
+                                <Pencil className="h-5 w-5 cursor-pointer hover:text-blue-600" />
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -419,6 +485,21 @@ const ViewApproved = () => {
         isOpen={printModal.isOpen}
         onClose={closePrintModal}
         transactionData={printModal.transactionData}
+      />
+
+      {/* View Transaction Modal */}
+      <ViewTransactionModal
+        isOpen={viewModal.isOpen}
+        onClose={handleCloseViewModal}
+        transactionData={viewModal.transactionData}
+      />
+
+      {/* Edit Transaction Modal */}
+      <EditTransactionModal
+        isOpen={editModal.isOpen}
+        onClose={handleCloseEditModal}
+        transactionData={editModal.transactionData}
+        onUpdate={handleTransactionUpdate}
       />
     </div>
   );
