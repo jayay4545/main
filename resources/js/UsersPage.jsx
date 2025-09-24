@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Search, Eye, Edit, Trash2, Plus, Bell, Settings, ArrowRight, X } from "lucide-react";
 import HomeSidebar from "./HomeSidebar";
 
@@ -36,33 +36,14 @@ const UsersPage = () => {
     }
   ]);
 
-  const [employees, setEmployees] = useState([
-    {
-      id: 1,
-      name: "France Magdalaro",
-      username: "France30",
-      email: "Superadmin@hris.com",
-      accountType: "Employee"
-    },
-    {
-      id: 2,
-      name: "France Magdalaro",
-      username: "France30",
-      email: "Superadmin@hris.com",
-      accountType: "Employee"
-    },
-    {
-      id: 3,
-      name: "France Magdalaro",
-      username: "France30",
-      email: "Superadmin@hris.com",
-      accountType: "Employee"
-    }
-  ]);
+  const [employees, setEmployees] = useState([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const [employeesError, setEmployeesError] = useState("");
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [newUser, setNewUser] = useState({ 
     name: "", 
@@ -72,6 +53,43 @@ const UsersPage = () => {
     confirmPassword: "",
     accountType: "Employee" 
   });
+
+  // Load employees from API
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        setLoadingEmployees(true);
+        setEmployeesError("");
+        const res = await fetch('/api/employees');
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          const mapped = json.data.map(e => ({
+            id: e.id,
+            name: `${e.first_name} ${e.last_name}`.trim(),
+            username: e.employee_id || (e.email ? e.email.split('@')[0] : ''),
+            email: e.email,
+            accountType: 'Employee',
+            // Keep raw fields for update
+            firstName: e.first_name,
+            lastName: e.last_name,
+            position: e.position,
+            department: e.department,
+            phone: e.phone,
+            status: e.status,
+            hireDate: e.hire_date
+          }));
+          setEmployees(mapped);
+        } else {
+          setEmployeesError(json.message || 'Failed to load employees');
+        }
+      } catch (err) {
+        setEmployeesError(err?.message || 'Failed to load employees');
+      } finally {
+        setLoadingEmployees(false);
+      }
+    };
+    fetchEmployees();
+  }, []);
 
   const handleAddUser = () => {
     if (newUser.name && newUser.username && newUser.email && newUser.password && newUser.confirmPassword) {
@@ -99,7 +117,7 @@ const UsersPage = () => {
     }
   };
 
-  const handleEditUser = () => {
+  const handleEditUser = async () => {
     if (selectedUser && newUser.name && newUser.username && newUser.email) {
       const updatedUser = {
         ...selectedUser,
@@ -108,12 +126,33 @@ const UsersPage = () => {
         email: newUser.email,
         accountType: newUser.accountType
       };
-
       if (selectedUser.accountType === "IT admin") {
         setAdmins(admins.map(admin => 
           admin.id === selectedUser.id ? updatedUser : admin
         ));
       } else {
+        // Persist to backend
+        try {
+          const [firstName, ...rest] = newUser.name.split(' ');
+          const lastName = rest.join(' ') || selectedUser.lastName || '';
+          const payload = {
+            first_name: firstName || selectedUser.firstName || '',
+            last_name: lastName || selectedUser.lastName || '',
+            email: newUser.email,
+            position: selectedUser.position || 'Employee',
+            department: selectedUser.department || null,
+            phone: selectedUser.phone || null,
+            status: selectedUser.status || 'active',
+            hire_date: selectedUser.hireDate || null
+          };
+          await fetch(`/api/employees/${selectedUser.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } catch (e) {
+          console.error('Failed to update employee', e);
+        }
         setEmployees(employees.map(employee => 
           employee.id === selectedUser.id ? updatedUser : employee
         ));
@@ -125,11 +164,16 @@ const UsersPage = () => {
     }
   };
 
-  const handleDeleteUser = () => {
+  const handleDeleteUser = async () => {
     if (selectedUser) {
       if (selectedUser.accountType === "IT admin") {
         setAdmins(admins.filter(admin => admin.id !== selectedUser.id));
       } else {
+        try {
+          await fetch(`/api/employees/${selectedUser.id}`, { method: 'DELETE', headers: { 'Accept': 'application/json' } });
+        } catch (e) {
+          console.error('Failed to delete employee', e);
+        }
         setEmployees(employees.filter(employee => employee.id !== selectedUser.id));
       }
       setSelectedUser(null);
@@ -153,6 +197,11 @@ const UsersPage = () => {
   const openDeleteModal = (user) => {
     setSelectedUser(user);
     setShowDeleteModal(true);
+  };
+
+  const openViewModal = (user) => {
+    setSelectedUser(user);
+    setShowViewModal(true);
   };
 
   return (
@@ -250,7 +299,7 @@ const UsersPage = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
-                          <button className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-100" title="View">
+                          <button onClick={() => openViewModal(admin)} className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-100" title="View">
                             <Eye className="h-4 w-4" />
                           </button>
                           <button
@@ -291,6 +340,16 @@ const UsersPage = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
+                  {loadingEmployees && (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-4 text-sm text-gray-500">Loading...</td>
+                    </tr>
+                  )}
+                  {employeesError && !loadingEmployees && (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-4 text-sm text-red-600">{employeesError}</td>
+                    </tr>
+                  )}
                   {employees.map((employee) => (
                     <tr key={employee.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -307,8 +366,14 @@ const UsersPage = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
-                          <button className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-100" title="View">
+                          <button onClick={() => openViewModal(employee)} className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-100" title="View">
                             <Eye className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => openEditModal(employee)} className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50" title="Edit">
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => openDeleteModal(employee)} className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50" title="Delete">
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       </td>
@@ -603,6 +668,46 @@ const UsersPage = () => {
                   className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
                 >
                   Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View User Modal */}
+      {showViewModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-blue-600">User Details</h3>
+                <button
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setSelectedUser(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
+                  title="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="space-y-3 text-sm">
+                <div><span className="text-gray-500">Name:</span> <span className="text-gray-900">{selectedUser?.name}</span></div>
+                <div><span className="text-gray-500">Username:</span> <span className="text-gray-900">{selectedUser?.username}</span></div>
+                <div><span className="text-gray-500">Email:</span> <span className="text-gray-900">{selectedUser?.email}</span></div>
+                <div><span className="text-gray-500">Account type:</span> <span className="text-gray-900">{selectedUser?.accountType}</span></div>
+              </div>
+              <div className="mt-6 text-right">
+                <button
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setSelectedUser(null);
+                  }}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  Close
                 </button>
               </div>
             </div>
