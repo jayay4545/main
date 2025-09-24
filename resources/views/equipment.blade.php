@@ -3,20 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <title>Equipment</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   @viteReactRefresh
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
   <div id="equipment-root"></div>
   <script>
-    setTimeout(() => {
-      if (window.React && window.ReactDOM && window.Equipment) {
-        const root = ReactDOM.createRoot(document.getElementById('equipment-root'));
-        root.render(React.createElement(window.Equipment));
+    window.APP_BASE_URL = "{{ url('/') }}";
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Equipment && window.initReact) {
+        window.initReact('equipment-root', window.Equipment);
+      } else {
+        console.error('Required components not found:', {
+          Equipment: !!window.Equipment,
+          initReact: !!window.initReact
+        });
       }
-    }, 100);
+    });
   </script>
-  </body>
- </html>
+</body>
+</html>
 
 

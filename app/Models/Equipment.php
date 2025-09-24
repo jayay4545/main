@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
+use App\Models\Category;
 
 class Equipment extends Model
 {
@@ -23,6 +25,8 @@ class Equipment extends Model
         'notes',
         'location',
         'category_id',
+        'item_image',
+        'receipt_image',
     ];
 
     protected $casts = [
@@ -31,10 +35,15 @@ class Equipment extends Model
         'warranty_expiry' => 'date',
     ];
 
+    protected $appends = [
+        'item_image_url',
+        'receipt_image_url',
+    ];
+
     // Relationships
     public function category(): BelongsTo
     {
-        return $this->belongsTo(EquipmentCategory::class);
+        return $this->belongsTo(Category::class, 'category_id');
     }
 
     public function requests(): HasMany
@@ -47,29 +56,57 @@ class Equipment extends Model
         return $this->hasMany(Transaction::class);
     }
 
+    // Accessors
+    public function getItemImageUrlAttribute(): ?string
+    {
+        if (!$this->item_image) {
+            return null;
+        }
+        return Storage::url($this->item_image);
+    }
+
+    public function getReceiptImageUrlAttribute(): ?string
+    {
+        if (!$this->receipt_image) {
+            return null;
+        }
+        return Storage::url($this->receipt_image);
+    }
+
+    // Helper methods for file management
+    public function deleteImages(): void
+    {
+        if ($this->item_image && Storage::exists($this->item_image)) {
+            Storage::delete($this->item_image);
+        }
+        if ($this->receipt_image && Storage::exists($this->receipt_image)) {
+            Storage::delete($this->receipt_image);
+        }
+    }
+
     // Scopes
-    public function scopeAvailable($query)
+    public function scopeAvailable($query): mixed
     {
         return $query->where('status', 'available');
     }
 
-    public function scopeInUse($query)
+    public function scopeInUse($query): mixed
     {
         return $query->where('status', 'in_use');
     }
 
-    public function scopeByCategory($query, $categoryId)
+    public function scopeByCategory($query, $categoryId): mixed
     {
         return $query->where('category_id', $categoryId);
     }
 
-    // Accessors & Mutators
-    public function getFullNameAttribute()
+    // Additional Accessors
+    public function getFullNameAttribute(): string
     {
         return "{$this->brand} {$this->name} {$this->model}";
     }
 
-    public function getIsAvailableAttribute()
+    public function getIsAvailableAttribute(): bool
     {
         return $this->status === 'available';
     }

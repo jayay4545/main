@@ -1,4 +1,5 @@
 import React from "react";
+import FileUploadWidget from "./components/FileUploadWidget";
 import { Search, UserCog } from "lucide-react";
 import HomeSidebar from "./HomeSidebar";
 
@@ -12,6 +13,74 @@ const ControlPanel = () => {
     { id: 4, title: 'Admin Position', subtitle: 'Manage', icon: UserCog },
     { id: 5, title: 'Admin Position', subtitle: 'Manage', icon: UserCog },
   ];
+
+  const [showCategoryModal, setShowCategoryModal] = React.useState(false);
+  const [catName, setCatName] = React.useState('');
+  const [catDesc, setCatDesc] = React.useState('');
+  const [catImage, setCatImage] = React.useState(null);
+  const [catError, setCatError] = React.useState('');
+  const [catLoading, setCatLoading] = React.useState(false);
+
+  const handleCardClick = (card) => {
+    if (card.title === 'Add Categories') {
+      setShowCategoryModal(true);
+    }
+  };
+
+  const handleCategorySubmit = async (e) => {
+    e.preventDefault();
+    setCatError('');
+    
+    // Validate all required fields
+    if (!catName.trim()) {
+      setCatError('Category name is required.');
+      return;
+    }
+    if (!catImage) {
+      setCatError('Category image is required.');
+      return;
+    }
+    
+    setCatLoading(true);
+    try {
+      const form = new FormData();
+      form.append('name', catName.trim());
+      form.append('description', catDesc.trim());
+      form.append('image', catImage);
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+        body: form
+      });
+      const contentType = res.headers.get('content-type');
+      let data;
+      if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        // Try to get text (likely HTML error page)
+        const text = await res.text();
+        setCatError('Server error: Unexpected response format.');
+        return;
+      }
+      if (data.success) {
+        setShowCategoryModal(false);
+        setCatName(''); setCatDesc(''); setCatImage(null); setCatError('');
+        // Optionally refresh category list here
+      } else {
+        // Show detailed validation errors if present
+        if (data.errors) {
+          const errorMessages = Object.values(data.errors).flat().join(' ');
+          setCatError(errorMessages || data.message || 'Failed to add category');
+        } else {
+          setCatError(data.message || 'Failed to add category');
+        }
+      }
+    } catch (err) {
+      setCatError('Error: ' + (err.message || 'Unknown'));
+    } finally {
+      setCatLoading(false);
+    }
+  };
 
   return (
     <div className="h-screen overflow-hidden bg-white flex">
@@ -59,17 +128,14 @@ const ControlPanel = () => {
             {controlPanelCards.map((card, index) => (
               <div
                 key={card.id}
-               className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              style={{ boxShadow: '0 2px 8px rgba(29, 78, 216, 0.4)', 
-            }}
+                className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                style={{ boxShadow: '0 2px 8px rgba(29, 78, 216, 0.4)' }}
+                onClick={() => handleCardClick(card)}
               >
                 <div className="flex items-center space-x-4">
-                  {/* Icon on the left */}
                   <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
                     <card.icon className="h-6 w-6 text-white" />
                   </div>
-                  
-                  {/* Text content on the right */}
                   <div className="flex flex-col">
                     <h3 className="text-lg font-semibold text-blue-600 mb-1">
                       {card.title}
@@ -82,6 +148,39 @@ const ControlPanel = () => {
               </div>
             ))}
           </div>
+
+          {/* Add Category Modal */}
+          {showCategoryModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/30" onClick={() => setShowCategoryModal(false)} />
+              <div className="relative bg-white rounded-2xl shadow-xl w-[400px] max-w-[95vw] p-8">
+                <h3 className="text-xl font-bold text-blue-600 text-center mb-4">Add Category</h3>
+                <form onSubmit={handleCategorySubmit}>
+                  <div className="mb-4">
+                    <label className="block text-sm text-gray-600 mb-1">Name*</label>
+                    <input type="text" value={catName} onChange={e => setCatName(e.target.value)} className="w-full px-3 py-2 rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm text-gray-600 mb-1">Description</label>
+                    <input type="text" value={catDesc} onChange={e => setCatDesc(e.target.value)} className="w-full px-3 py-2 rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <FileUploadWidget
+                    label="Image"
+                    onFileSelect={file => setCatImage(file)}
+                    error="Category image is required."
+                    required={true}
+                  />
+                  {catError && <div className="mb-2 text-xs text-red-600">{catError}</div>}
+                  <div className="flex justify-end mt-6">
+                    <button type="button" className="mr-3 px-4 py-2 rounded bg-gray-200 text-gray-700" onClick={() => setShowCategoryModal(false)}>Cancel</button>
+                    <button type="submit" disabled={catLoading} className="px-5 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">
+                      {catLoading ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>

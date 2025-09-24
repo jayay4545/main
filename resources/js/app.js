@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import Employee from './Employee.jsx';
+import { initReact } from './utils/initReact';
+import Employee from './Users/Employee.jsx';
 import EmployeePage from './EmployeePage.jsx';
 import SimpleEmployee from './SimpleEmployee';
 import ViewRequest from './ViewRequest';
@@ -19,6 +20,9 @@ window.React = React;
 // Properly expose ReactDOM with createRoot method
 window.ReactDOM = {};
 window.ReactDOM.createRoot = createRoot;
+
+// Expose initialization function
+window.initReact = initReact;
 
 // Ensure ReactDOM is properly exposed with all necessary methods
 try {

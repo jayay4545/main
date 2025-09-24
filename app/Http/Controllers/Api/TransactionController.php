@@ -5,9 +5,104 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Models\Transaction;
+use App\Models\Equipment;
+use App\Models\Employee;
+use App\Models\User;
 
 class TransactionController extends Controller
 {
+    /**
+     * Generate a receipt for the transaction
+     */
+    public function print($id)
+    {
+        try {
+            Log::info("Attempting to generate receipt for transaction ID: " . $id);
+            
+            // Get the transaction with related data
+            $transaction = Transaction::with(['user', 'employee', 'equipment', 'releasedBy', 'receivedBy'])
+                ->where('id', $id)
+                ->first();
+
+            Log::info("Transaction query completed", ['found' => (bool)$transaction]);
+
+            if (!$transaction) {
+                Log::warning("Transaction not found", ['id' => $id]);
+                return response()->json([
+                    'success' => false,
+                    'message' => "Transaction with ID {$id} not found"
+                ], 404);
+            }
+
+            // Log the found transaction data
+            Log::info("Transaction found", [
+                'transaction_number' => $transaction->transaction_number,
+                'status' => $transaction->status,
+                'has_employee' => (bool)$transaction->employee,
+                'has_equipment' => (bool)$transaction->equipment
+            ]);
+
+            // Ensure all required relationships are loaded
+            if (!$transaction->employee || !$transaction->equipment) {
+                Log::error("Missing required relationships", [
+                    'has_employee' => (bool)$transaction->employee,
+                    'has_equipment' => (bool)$transaction->equipment
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaction is missing required related data (employee or equipment)'
+                ], 500);
+            }
+
+            // Format the data for the receipt
+            $receiptData = [
+                'transaction' => [
+                    'number' => $transaction->transaction_number,
+                    'status' => ucfirst($transaction->status),
+                    'request_mode' => $transaction->request_mode ? ucwords(str_replace('_', ' ', $transaction->request_mode)) : null,
+                    'created_at' => $transaction->created_at->format('F j, Y, g:i a'),
+                ],
+                'equipment' => [
+                    'name' => $transaction->equipment->name,
+                    'serial_number' => $transaction->equipment->serial_number,
+                    'model' => $transaction->equipment->model,
+                    'brand' => $transaction->equipment->brand,
+                ],
+                'employee' => [
+                    'name' => $transaction->employee->name,
+                    'position' => $transaction->employee->position,
+                    'client' => $transaction->employee->client,
+                ],
+                'release_info' => $transaction->release_date ? [
+                    'date' => date('F j, Y', strtotime($transaction->release_date)),
+                    'condition' => ucwords(str_replace('_', ' ', $transaction->release_condition)),
+                    'released_by' => $transaction->releasedBy ? $transaction->releasedBy->name : null,
+                    'notes' => $transaction->release_notes,
+                    'expected_return_date' => $transaction->expected_return_date ? 
+                        date('F j, Y', strtotime($transaction->expected_return_date)) : null,
+                ] : null,
+                'return_info' => $transaction->return_date ? [
+                    'date' => date('F j, Y', strtotime($transaction->return_date)),
+                    'condition' => ucwords(str_replace('_', ' ', $transaction->return_condition)),
+                    'received_by' => $transaction->receivedBy ? $transaction->receivedBy->name : null,
+                    'notes' => $transaction->return_notes,
+                ] : null,
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $receiptData
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generating receipt: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     /**
      * Get dashboard statistics
      */
@@ -389,59 +484,6 @@ class TransactionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error releasing transaction: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Generate printable receipt for transaction
-     */
-    public function print(string $id)
-    {
-        try {
-            $transaction = DB::table('transactions')
-                ->leftJoin('employees', 'transactions.employee_id', '=', 'employees.id')
-                ->leftJoin('equipment', 'transactions.equipment_id', '=', 'equipment.id')
-                // Use released_by as approved_by for compatibility with UI label
-                ->leftJoin('users as approved_by_user', 'transactions.released_by', '=', 'approved_by_user.id')
-                ->where('transactions.id', $id)
-                ->select(
-                    'transactions.*',
-                    DB::raw("COALESCE(transactions.release_notes, '') as notes"),
-                    'employees.first_name',
-                    'employees.last_name',
-                    DB::raw("CONCAT(COALESCE(employees.first_name, ''), ' ', COALESCE(employees.last_name, '')) as full_name"),
-                    'employees.position',
-                    'equipment.name as equipment_name',
-                    'equipment.brand',
-                    'equipment.serial_number',
-                    'equipment.model',
-                    'approved_by_user.name as approved_by_name'
-                )
-                ->first();
-
-            if (!$transaction) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Transaction not found'
-                ], 404);
-            }
-
-            // Generate transaction number if not exists
-            if (!$transaction->transaction_number) {
-                $transactionNumber = 'TXN-' . str_pad($id, 6, '0', STR_PAD_LEFT);
-                DB::table('transactions')->where('id', $id)->update(['transaction_number' => $transactionNumber]);
-                $transaction->transaction_number = $transactionNumber;
-            }
-
-            return response()->json([
-                'success' => true,
-                'data' => $transaction
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error generating print data: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\RequestController;
+use App\Http\Controllers\Api\EquipmentController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -39,3 +40,10 @@ Route::put('/transactions/{id}', [TransactionController::class, 'update']);
 Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);
 Route::post('/transactions/{id}/release', [TransactionController::class, 'release']);
 Route::get('/transactions/{id}/print', [TransactionController::class, 'print']);
+
+// Equipment API routes
+Route::apiResource('/equipment', EquipmentController::class);
+
+// Category API routes
+use App\Http\Controllers\Api\CategoryController;
+Route::apiResource('categories', CategoryController::class);

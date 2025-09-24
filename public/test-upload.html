@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test Equipment Upload</title>
+</head>
+<body>
+  <h1>Upload Item & Receipt Images</h1>
+  <form id="uploadForm" action="/api/equipment" method="post" enctype="multipart/form-data">
+    <label>Name: <input type="text" name="name" value="Test Item" required></label><br>
+    <label>Brand: <input type="text" name="brand" value="TestBrand" required></label><br>
+    <label>Status: <select name="status"><option value="available">available</option></select></label><br>
+    <label>Condition: <select name="condition"><option value="good">good</option></select></label><br>
+    <label>Item image: <input type="file" name="item_image" accept="image/*"></label><br>
+    <label>Receipt image: <input type="file" name="receipt_image" accept="image/*"></label><br>
+    <button type="submit">Upload</button>
+  </form>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      const res = await fetch(form.action, { method: 'POST', body: data });
+      const json = await res.json();
+      alert(JSON.stringify(json));
+    });
+  </script>
+</body>
+</html>

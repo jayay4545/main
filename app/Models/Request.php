@@ -90,7 +90,9 @@ class Request extends Model
     public function getDurationAttribute()
     {
         if ($this->start_date && $this->end_date) {
-            return $this->start_date->diffInDays($this->end_date);
+            $start = \Carbon\Carbon::parse($this->start_date);
+            $end = \Carbon\Carbon::parse($this->end_date);
+            return $start->diffInDays($end);
         }
         return null;
     }
