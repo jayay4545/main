@@ -13,6 +13,7 @@ import AddStocks from './AddStocks.jsx';
 import RoleManagementPage from './RoleManagementPage.jsx';
 import UsersPage from './UsersPage.jsx';
 import ControlPanel from './ControlPanel.jsx';
+import Reports from './Reports.jsx';
 
 // Make React, ReactDOM, and components available globally for fallback mechanisms
 window.React = React;
@@ -44,6 +45,7 @@ window.EmployeePage = EmployeePage;
 window.RoleManagementPage = RoleManagementPage;
 window.UsersPage = UsersPage;
 window.ControlPanel = ControlPanel;
+window.Reports = Reports;
 
 // Double check components are properly exposed
 console.log('ViewApproved component:', ViewApproved);
@@ -270,6 +272,31 @@ document.addEventListener('DOMContentLoaded', function() {
               <div style="padding: 20px; background-color: #ffebee; border: 2px solid #f44336; border-radius: 5px; margin: 20px; text-align: center;">
                 <h2 style="color: #d32f2f;">Control Panel Failed to Load</h2>
                 <p>There was an error loading the Control Panel component. Please try reloading the page.</p>
+                <button onclick="window.location.reload()" style="padding: 10px 20px; background-color: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+                  Reload Page
+                </button>
+              </div>
+            `;
+        }
+    }
+    
+    // Check for reports-root (for reports page)
+    const reportsContainer = document.getElementById('reports-root');
+    console.log('reports-root element found:', reportsContainer);
+    
+    if (reportsContainer) {
+        try {
+            console.log('Initializing Reports component');
+            const root = createRoot(reportsContainer);
+            root.render(React.createElement(Reports));
+            console.log('Reports component rendered successfully');
+        } catch (error) {
+            console.error('Error rendering Reports component:', error);
+            // Display error message in the UI
+            reportsContainer.innerHTML = `
+              <div style="padding: 20px; background-color: #ffebee; border: 2px solid #f44336; border-radius: 5px; margin: 20px; text-align: center;">
+                <h2 style="color: #d32f2f;">Reports Failed to Load</h2>
+                <p>There was an error loading the Reports component. Please try reloading the page.</p>
                 <button onclick="window.location.reload()" style="padding: 10px 20px; background-color: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
                   Reload Page
                 </button>

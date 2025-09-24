@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import HomeSidebar from './HomeSidebar';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Trash2, Search } from 'lucide-react';
 import Taskbar from './components/Taskbar.jsx';
 
 const getBadgeColor = (name) => {
@@ -28,6 +28,7 @@ const EmployeePage = () => {
     client: ''
   });
   const [employees, setEmployees] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetch('/api/employees')
@@ -105,15 +106,37 @@ const EmployeePage = () => {
          <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">
           <h2 className="text-4xl font-bold text-blue-600">Employees</h2>
 
-        <div className="px-10 pt-4 flex justify-end mb-6">
-          <button onClick={() => setIsAddOpen(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Add New</button>
+        {/* Toolbar: Search + Add New */}
+        <div className="mt-4 mb-6 flex items-center gap-6">
+          {/* Search area in light container with gray block */}
+          <div className="flex items-center bg-gray-100 rounded-2xl px-4 py-3 w-full max-w-2xl border border-gray-200 shadow-sm">
+            <div className="flex items-center bg-white rounded-xl pl-3 pr-2 py-2 w-full max-w-xl border border-gray-200">
+              <Search className="h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search"
+                className="bg-transparent outline-none px-3 text-sm w-full"
+              />
+            </div>
+            <div className="ml-4 w-28 h-10 bg-gray-300 rounded-md" />
+          </div>
+
+          {/* Add New inside subtle card, outlined button */}
+          <div className="bg-gray-100 rounded-2xl px-4 py-3 border border-gray-200 shadow-sm">
+            <button onClick={() => setIsAddOpen(true)} className="px-5 py-2 rounded-xl border border-blue-400 text-blue-600 bg-white hover:bg-blue-50">Add New</button>
+          </div>
         </div>
+
+        {/* Section subtitle above table */}
+        <h3 className="text-xl font-semibold text-gray-700 mb-3">Employees</h3>
 
       {/* Table */}
 <main className="px-10 pb-10 flex-1 min-h-0 overflow-y-auto">
-  <div className="overflow-x-auto rounded-lg border border-gray-200">
-    <table className="min-w-full text-sm text-left text-gray-600">
-      <thead className="bg-gray-100 text-gray-700 text-sm font-semibold">
+  <div className="overflow-x-auto rounded-lg">
+    <table className="min-w-full text-sm text-left text-gray-700">
+      <thead className="text-gray-600 text-sm font-semibold">
         <tr>
           <th className="px-4 py-3">Name</th>
           <th className="px-4 py-3">Position</th>
@@ -121,7 +144,7 @@ const EmployeePage = () => {
           <th className="px-4 py-3 text-right">Actions</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-gray-200">
+      <tbody className="border-t border-gray-300">
         {employees.length === 0 ? (
           <tr>
             <td colSpan="4" className="px-4 py-6 text-center text-gray-400">
@@ -129,7 +152,17 @@ const EmployeePage = () => {
             </td>
           </tr>
         ) : (
-          employees.map((e) => (
+          employees
+            .filter((e) => {
+              const q = searchQuery.trim().toLowerCase();
+              if (!q) return true;
+              return (
+                e.name?.toLowerCase().includes(q) ||
+                e.position?.toLowerCase().includes(q) ||
+                e.department?.toLowerCase().includes(q)
+              );
+            })
+            .map((e) => (
             <tr key={e.id} className="hover:bg-blue-50">
               <td className="px-4 py-3 flex items-center space-x-3">
                 <div className={`w-8 h-8 ${e.color} rounded-full text-white text-sm flex items-center justify-center`}>

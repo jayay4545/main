@@ -73,3 +73,7 @@ Route::get('/users', function () {
 Route::get('/control-panel', function () {
     return view('control-panel');
 })->name('control-panel');
+
+Route::get('/reports', function () {
+    return view('reports');
+})->name('reports');
