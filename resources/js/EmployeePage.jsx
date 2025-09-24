@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import HomeSidebar from './HomeSidebar';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
-import Taskbar from './components/Taskbar.jsx';
+import { Eye, Pencil, Trash2, Search } from 'lucide-react';
 
 const getBadgeColor = (name) => {
-  // Simple color assignment based on first letter
   const colors = {
     J: 'bg-blue-500',
-    K: 'bg-pink-500',
+    K: 'bg-pink-500', 
     R: 'bg-yellow-500',
     C: 'bg-blue-500',
   };
@@ -15,13 +13,12 @@ const getBadgeColor = (name) => {
   return colors[first] || 'bg-gray-400';
 };
 
-
-
 const EmployeePage = () => {
   const [isAddOpen, setIsAddOpen] = React.useState(false);
   const [viewing, setViewing] = React.useState(null);
   const [editing, setEditing] = React.useState(null);
   const [deleting, setDeleting] = React.useState(null);
+  const [searchTerm, setSearchTerm] = React.useState('');
   const [form, setForm] = React.useState({
     name: '',
     email: '',
@@ -166,46 +163,120 @@ const EmployeePage = () => {
       .catch(() => alert('Failed to delete employee'));
   };
 
+  const filteredEmployees = employees.filter(emp =>
+    emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.department.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="h-screen overflow-hidden bg-white flex">
+    <div className="h-screen overflow-hidden bg-gray-50 flex">
       <HomeSidebar />
+      
       <div className="flex-1 flex flex-col">
-        <Taskbar title="Employees" />
-        <div className="px-10 pt-4 flex justify-end">
-          <button onClick={() => setIsAddOpen(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Add New</button>
+        {/* Header */}
+        <div className="bg-white px-8 py-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-semibold text-blue-600">Employees</h1>
+            <div className="flex items-center space-x-4">
+              <button className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                <div className="w-4 h-4 bg-gray-400 rounded"></div>
+              </button>
+              <button className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                <div className="w-4 h-4 bg-gray-400 rounded"></div>
+              </button>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">John F.</span>
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                  J
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Table */}
-        <main className="px-10 pb-10 flex-1 min-h-0 overflow-y-auto">
-          <div className="grid grid-cols-12 items-center text-gray-600 text-sm border-b border-gray-200 pb-2">
-            <div className="col-span-6 pl-2">Name</div>
-            <div className="col-span-2">Position</div>
-            <div className="col-span-2">Department</div>
-            <div className="col-span-2 text-right pr-4">Actions</div>
+        {/* Search Bar and Add Button */}
+        <div className="bg-white px-8 py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <input
+                  type="text"
+                  placeholder="Search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-80"
+                />
+              </div>
+              <button className="px-4 py-2 bg-gray-200 text-gray-600 rounded-lg">
+                Filter
+              </button>
+            </div>
+            <button 
+              onClick={() => setIsAddOpen(true)} 
+              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Add New
+            </button>
           </div>
+        </div>
 
-          <div className="divide-y">
-            {employees.length === 0 ? (
-              <div className="py-6 text-center text-gray-400">No employees found.</div>
-            ) : (
-              employees.map((e) => (
-                <div key={e.id} className="grid grid-cols-12 items-center py-3">
-                  <div className="col-span-6 flex items-center space-x-3">
-                    <div className={`w-6 h-6 ${e.color} rounded-full text-white text-xs flex items-center justify-center`}>{e.badge}</div>
-                    <div className="text-gray-800">{e.name}</div>
+        {/* Content */}
+        <div className="flex-1 bg-white px-8 py-6 overflow-y-auto">
+          <h2 className="text-xl font-semibold text-gray-800 mb-6">Employees</h2>
+          
+          {/* Table */}
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            {/* Table Header */}
+            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+              <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-600">
+                <div className="col-span-4">Name</div>
+                <div className="col-span-3">Position</div>
+                <div className="col-span-3">Department</div>
+                <div className="col-span-2 text-center">Actions</div>
+              </div>
+            </div>
+
+            {/* Table Body */}
+            <div className="divide-y divide-gray-200">
+              {filteredEmployees.length === 0 ? (
+                <div className="py-8 text-center text-gray-500">No employees found.</div>
+              ) : (
+                filteredEmployees.map((e) => (
+                  <div key={e.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                    <div className="grid grid-cols-12 gap-4 items-center">
+                      <div className="col-span-4 flex items-center space-x-3">
+                        <div className={`w-8 h-8 ${e.color} rounded-full text-white text-sm flex items-center justify-center font-medium`}>
+                          {e.badge}
+                        </div>
+                        <span className="text-gray-900 font-medium">{e.name}</span>
+                      </div>
+                      <div className="col-span-3 text-gray-600">{e.position}</div>
+                      <div className="col-span-3 text-gray-600">{e.department}</div>
+                      <div className="col-span-2 flex items-center justify-center space-x-3">
+                        <button
+                          onClick={() => openEdit(e)}
+                          className="text-gray-400 hover:text-blue-500 transition-colors"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => openDelete(e)}
+                          className="text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="col-span-2 text-gray-700">{e.position}</div>
-                  <div className="col-span-2 text-gray-700">{e.department}</div>
-                  <div className="col-span-2 flex justify-end space-x-4 text-gray-500 pr-2">
-                    <Eye className="h-4 w-4 cursor-pointer" onClick={() => openView(e)} />
-                    <Pencil className="h-4 w-4 cursor-pointer" onClick={() => openEdit(e)} />
-                    <Trash2 className="h-4 w-4 cursor-pointer" onClick={() => openDelete(e)} />
-                  </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
           </div>
-        </main>
+        </div>
+
+        {/* Modals remain the same as in your original code */}
         {viewing && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50" onClick={closeView} />
@@ -237,6 +308,7 @@ const EmployeePage = () => {
             </div>
           </div>
         )}
+
         {isAddOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50" onClick={closeModal} />
@@ -280,6 +352,7 @@ const EmployeePage = () => {
             </div>
           </div>
         )}
+
         {editing && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50" onClick={closeEdit} />
@@ -315,6 +388,7 @@ const EmployeePage = () => {
             </div>
           </div>
         )}
+
         {deleting && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50" onClick={closeDelete} />
@@ -352,5 +426,3 @@ const EmployeePage = () => {
 };
 
 export default EmployeePage;
-
-
