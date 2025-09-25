@@ -102,18 +102,20 @@ const EmployeePage = () => {
   const openView = (emp) => setViewing(emp);
   const closeView = () => setViewing(null);
 
+  // Fixed openEdit function - clear form for blank fields
   const openEdit = (emp) => {
     setEditing(emp);
     setForm({
-      name: emp.name,
-      email: emp.email || '',
-      contact: emp.phone || '',
+      name: '',
+      email: '',
+      contact: '',
       address: '',
-      position: emp.position || '',
-      client: emp.department || ''
+      position: '',
+      client: ''
     });
     setIsAddOpen(false);
   };
+  
   const closeEdit = () => { setEditing(null); resetAll(); };
 
   const updateEmployee = () => {
@@ -256,6 +258,12 @@ const EmployeePage = () => {
                       <div className="col-span-3 text-gray-600">{e.department}</div>
                       <div className="col-span-2 flex items-center justify-center space-x-3">
                         <button
+                          onClick={() => openView(e)}
+                          className="text-gray-400 hover:text-blue-500 transition-colors"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
                           onClick={() => openEdit(e)}
                           className="text-gray-400 hover:text-blue-500 transition-colors"
                         >
@@ -276,136 +284,243 @@ const EmployeePage = () => {
           </div>
         </div>
 
-        {/* Modals remain the same as in your original code */}
+        {/* View Modal */}
         {viewing && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/50" onClick={closeView} />
-            <div className="relative bg-gray-800 rounded-2xl shadow-2xl w-[600px] max-w-[95vw] p-6 border border-gray-700">
-              <button onClick={closeView} className="absolute right-4 top-4 text-gray-400 hover:text-blue-400 text-xl">✕</button>
-              <h3 className="text-xl font-bold text-blue-400 mb-6">Employee details</h3>
-              <div className="space-y-4 text-sm">
-                <div className="flex justify-between py-2 border-b border-gray-700">
-                  <span className="text-black font-medium">Name:</span>
-                  <span className="text-white">{viewing.name}</span>
+            <div className="absolute inset-0 bg-black/20" onClick={closeView} />
+            <div className="relative bg-white rounded-3xl shadow-2xl w-[700px] max-w-[95vw] p-8 border border-gray-200">
+              <button onClick={closeView} className="absolute right-6 top-6 text-gray-400 hover:text-gray-600 text-xl">✕</button>
+              <h3 className="text-2xl font-semibold text-blue-600 mb-8">Employee Details</h3>
+              
+              <div className="grid grid-cols-12 gap-4 mb-6">
+                {/* Employee ID */}
+                <div className="col-span-4">
+                  <label className="block text-xs font-medium text-gray-500 mb-2">EMP ID</label>
+                  <div className="bg-gray-100 rounded-lg p-3">
+                    <span className="text-gray-900 font-medium">{viewing.id || '19247'}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between py-2 border-b border-gray-700">
-                  <span className="text-black font-medium">Email:</span>
-                  <span className="text-white">{viewing.email || '—'}</span>
+                
+                {/* Full Name */}
+                <div className="col-span-5">
+                  <label className="block text-xs font-medium text-gray-500 mb-2">User ID</label>
+                  <div className="bg-gray-100 rounded-lg p-3">
+                    <span className="text-gray-900 font-medium">{viewing.name}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between py-2 border-b border-gray-700">
-                  <span className="text-black font-medium">Contact:</span>
-                  <span className="text-white">{viewing.phone || '—'}</span>
+                
+                {/* Password Field */}
+                <div className="col-span-3">
+                  <label className="block text-xs font-medium text-gray-500 mb-2">Password</label>
+                  <div className="bg-gray-100 rounded-lg p-3 flex items-center justify-between">
+                    <span className="text-gray-900">••••••••••</span>
+                    <button className="text-gray-400 hover:text-gray-600">
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <small className="text-xs text-gray-400 mt-1">Reset to Default</small>
                 </div>
-                <div className="flex justify-between py-2 border-b border-gray-700">
-                  <span className="text-black font-medium">Position:</span>
-                  <span className="text-white">{viewing.position || '—'}</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                {/* Email */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-2">Email</label>
+                  <div className="bg-gray-100 rounded-lg p-3">
+                    <span className="text-gray-900">{viewing.email || 'Christopher.Francisco@example.com'}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-black font-medium">Department:</span>
-                  <span className="text-white">{viewing.department || '—'}</span>
+                
+                {/* Phone */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-2">Phone</label>
+                  <div className="bg-gray-100 rounded-lg p-3">
+                    <span className="text-gray-900">{viewing.phone || '09123456789'}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Address */}
+              <div className="mb-6">
+                <label className="block text-xs font-medium text-gray-500 mb-2">Address</label>
+                <div className="bg-gray-100 rounded-lg p-3">
+                  <span className="text-gray-900">543 Zone 5 old brio street bacolod negros occ</span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                {/* Client/Department */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-2">Client</label>
+                  <div className="bg-gray-100 rounded-lg p-3">
+                    <span className="text-gray-900">{viewing.department || 'Cloud Service Center'}</span>
+                  </div>
+                </div>
+                
+                {/* Position */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-2">Position</label>
+                  <div className="bg-gray-100 rounded-lg p-3">
+                    <span className="text-gray-900">{viewing.position || 'Graphic Designer'}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Issued Item */}
+              <div className="mb-8">
+                <label className="block text-xs font-medium text-gray-500 mb-2">Issued Item</label>
+                <div className="bg-gray-100 rounded-lg p-4 min-h-[80px]">
+                  <div className="bg-gray-300 rounded-lg h-6 w-full"></div>
                 </div>
               </div>
             </div>
           </div>
         )}
 
+        {/* Add Modal */}
         {isAddOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-white/50" onClick={closeModal} />
-            <div className="relative bg-white rounded-2xl shadow-2xl w-[900px] max-w-[95vw] p-8 border border-gray-50">
-              <button onClick={closeModal} className="absolute right-4 top-4 text-gray-400 hover:text-blue-400 text-xl">✕</button>
-              <h3 className="text-xl font-bold text-blue-400 text-center mb-6">Add employee</h3>
+            <div className="absolute inset-0 bg-black/20" onClick={closeModal} />
+            <div className="relative bg-white rounded-2xl shadow-2xl w-[700px] max-w-[95vw] p-8 border border-gray-200">
+              <button onClick={closeModal} className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 text-xl">✕</button>
+              <h3 className="text-xl font-semibold text-blue-500 text-center mb-8">Add employee</h3>
 
-              <div className="mt-6 grid grid-cols-2 gap-8">
+              <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm text-black font-medium">Name*</label>
-                  <input value={form.name} onChange={update('name')} className="mt-2 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter full name" />
+                  <label className="block text-sm text-gray-700 font-medium mb-2">Name*</label>
+                  <input 
+                    value={form.name} 
+                    onChange={update('name')} 
+                    className="w-full px-4 py-3 rounded-lg bg-gray-100 border-0 text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="Enter full name" 
+                  />
                 </div>
                 <div>
-                  <label className="text-sm text-black font-medium">Email*</label>
-                  <input value={form.email} onChange={update('email')} className="mt-2 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter email address" />
-                </div>
-
-                <div>
-                  <label className="text-sm text-black font-medium">Contact no.</label>
-                  <input value={form.contact} onChange={update('contact')} className="mt-2 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter phone number" />
-                </div>
-                <div>
-                  <label className="text-sm text-black font-medium">Address</label>
-                  <input value={form.address} onChange={update('address')} className="mt-2 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter address" />
-                </div>
-
-                <div>
-                  <label className="text-sm text-black font-medium">Position*</label>
-                  <input value={form.position} onChange={update('position')} className="mt-2 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter job position" />
+                  <label className="block text-sm text-gray-700 font-medium mb-2">Email*</label>
+                  <input 
+                    value={form.email} 
+                    onChange={update('email')} 
+                    className="w-full px-4 py-3 rounded-lg bg-gray-100 border-0 text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="Enter email address" 
+                  />
                 </div>
                 <div>
-                  <label className="text-sm text-black font-medium">Department</label>
-                  <input value={form.client} onChange={update('client')} className="mt-2 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter department" />
+                  <label className="block text-sm text-gray-700 font-medium mb-2">Contact no.</label>
+                  <input 
+                    value={form.contact} 
+                    onChange={update('contact')} 
+                    className="w-full px-4 py-3 rounded-lg bg-gray-100 border-0 text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="Enter phone number" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 font-medium mb-2">Position*</label>
+                  <input 
+                    value={form.position} 
+                    onChange={update('position')} 
+                    className="w-full px-4 py-3 rounded-lg bg-gray-100 border-0 text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="Enter job position" 
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm text-gray-700 font-medium mb-2">Department</label>
+                  <input 
+                    value={form.client} 
+                    onChange={update('client')} 
+                    className="w-full px-4 py-3 rounded-lg bg-gray-100 border-0 text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="Enter department" 
+                  />
                 </div>
               </div>
 
               <div className="mt-8 flex items-center justify-between">
-                <button onClick={resetAll} className="text-blue-400 hover:text-blue-300 font-medium">Reset all</button>
-                <button onClick={saveEmployee} className="px-6 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-medium transition-colors">Save →</button>
+                <button onClick={resetAll} className="text-blue-500 hover:text-blue-600 font-medium">Reset all</button>
+                <button onClick={saveEmployee} className="px-8 py-3 rounded-full bg-blue-500 text-white hover:bg-blue-600 font-medium transition-colors">Save →</button>
               </div>
             </div>
           </div>
         )}
 
+        {/* Edit Modal */}
         {editing && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-white/50" onClick={closeEdit} />
-            <div className="relative bg-white rounded-2xl shadow-2xl w-[900px] max-w-[95vw] p-8 border border-gray-50">
-              <button onClick={closeEdit} className="absolute right-4 top-4 text-gray-400 hover:text-blue-400 text-xl">✕</button>
-              <h3 className="text-xl font-bold text-blue-400 text-center mb-6">Edit employee</h3>
-              <div className="mt-6 grid grid-cols-2 gap-8">
+            <div className="absolute inset-0 bg-black/20" onClick={closeEdit} />
+            <div className="relative bg-white rounded-2xl shadow-2xl w-[700px] max-w-[95vw] p-8 border border-gray-200">
+              <button onClick={closeEdit} className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 text-xl">✕</button>
+              <h3 className="text-xl font-semibold text-blue-500 text-center mb-8">Edit employee</h3>
+              <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm text-black font-medium">Name*</label>
-                  <input value={form.name} onChange={update('name')} className="mt-2 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  <label className="block text-sm text-gray-700 font-medium mb-2">Name*</label>
+                  <input 
+                    value={form.name} 
+                    onChange={update('name')} 
+                    className="w-full px-4 py-3 rounded-lg bg-gray-100 border-0 text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="Enter Name" 
+                  />
                 </div>
                 <div>
-                  <label className="text-sm text-black font-medium">Email*</label>
-                  <input value={form.email} onChange={update('email')} className="mt-2 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  <label className="block text-sm text-gray-700 font-medium mb-2">Email*</label>
+                  <input 
+                    value={form.email} 
+                    onChange={update('email')} 
+                    className="w-full px-4 py-3 rounded-lg bg-gray-100 border-0 text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="Enter Email" 
+                  />
                 </div>
                 <div>
-                  <label className="text-sm text-black font-medium">Contact no.</label>
-                  <input value={form.contact} onChange={update('contact')} className="mt-2 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  <label className="block text-sm text-gray-700 font-medium mb-2">Contact no.</label>
+                  <input 
+                    value={form.contact} 
+                    onChange={update('contact')} 
+                    className="w-full px-4 py-3 rounded-lg bg-gray-100 border-0 text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="Enter Contact No." 
+                  />
                 </div>
                 <div>
-                  <label className="text-sm text-black font-medium">Position*</label>
-                  <input value={form.position} onChange={update('position')} className="mt-2 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  <label className="block text-sm text-gray-700 font-medium mb-2">Position*</label>
+                  <input 
+                    value={form.position} 
+                    onChange={update('position')} 
+                    className="w-full px-4 py-3 rounded-lg bg-gray-100 border-0 text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="Enter Position" 
+                  />
                 </div>
-                <div>
-                  <label className="text-sm text-black font-medium">Department</label>
-                  <input value={form.client} onChange={update('client')} className="mt-2 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white placeholder-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                <div className="col-span-2">
+                  <label className="block text-sm text-gray-700 font-medium mb-2">Department</label>
+                  <input 
+                    value={form.client} 
+                    onChange={update('client')} 
+                    className="w-full px-4 py-3 rounded-lg bg-gray-100 border-0 text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="Enter Department" 
+                  />
                 </div>
               </div>
               <div className="mt-8 flex items-center justify-between">
-                <button onClick={resetAll} className="text-blue-400 hover:text-blue-300 font-medium">Reset</button>
-                <button onClick={updateEmployee} className="px-6 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-medium transition-colors">Update →</button>
+                <button onClick={resetAll} className="text-blue-500 hover:text-blue-600 font-medium">Reset</button>
+                <button onClick={updateEmployee} className="px-8 py-3 rounded-full bg-blue-500 text-white hover:bg-blue-600 font-medium transition-colors">Update →</button>
               </div>
             </div>
           </div>
         )}
 
+        {/* Delete Modal */}
         {deleting && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50" onClick={closeDelete} />
-            <div className="relative bg-white rounded-2xl shadow-2xl w-[400px] max-w-[95vw] p-6 border border-gray-700">
+            <div className="relative bg-white rounded-2xl shadow-2xl w-[400px] max-w-[95vw] p-6 border border-gray-200">
               <div className="text-center">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-900/20 mb-4">
-                  <Trash2 className="h-6 w-6 text-red-400" />
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                  <Trash2 className="h-6 w-6 text-red-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Delete Employee</h3>
-                <p className="text-gray-300 mb-6">
-                  Are you sure you want to delete <span className="font-medium text-white">{deleting.name}</span>? 
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Employee</h3>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to delete <span className="font-medium text-gray-900">{deleting.name}</span>? 
                   This action cannot be undone.
                 </p>
                 <div className="flex space-x-3 justify-center">
                   <button 
                     onClick={closeDelete}
-                    className="px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors"
+                    className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 font-medium transition-colors"
                   >
                     Cancel
                   </button>

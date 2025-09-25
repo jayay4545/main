@@ -198,15 +198,6 @@ const RoleManagementPage = () => {
               </div>
             ))}
           </div>
-          
-          {/* Add Admin Button */}
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="mt-6 inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Admin
-          </button>
         </div>
         
         {/* Right Panel - Admin Details */}
@@ -260,57 +251,7 @@ const RoleManagementPage = () => {
         </div>
         </main>
       </div>
-
-      {/* Add Admin Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Admin</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Admin Name</label>
-                  <input
-                    type="text"
-                    value={newRole.name}
-                    onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter admin name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Position</label>
-                  <input
-                    type="text"
-                    value={newRole.description}
-                    onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter position"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end space-x-3 mt-6">
-                <button
-                  onClick={() => {
-                    setShowAddModal(false);
-                    setNewRole({ name: "", description: "" });
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAddRole}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
-                >
-                  Add Admin
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
+      
       {/* Edit Admin Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
