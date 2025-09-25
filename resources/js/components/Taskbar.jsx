@@ -1,7 +1,26 @@
 import React from "react";
 import { Search } from "lucide-react";
+import BubbleProfile from "./BubbleProfile";
 
-const Taskbar = ({ title = "", onSearch, hideSearch = false }) => {
+const Taskbar = ({ title = "", onSearch, hideSearch = false, user, onEditProfile, onLogout }) => {
+  const handleEditProfile = () => {
+    if (onEditProfile) {
+      onEditProfile();
+    } else {
+      console.log('Edit profile clicked');
+      // You can add navigation to edit profile page here
+    }
+  };
+
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout();
+    } else {
+      console.log('Logout clicked');
+      // You can add logout logic here
+    }
+  };
+
   return (
     <header className="flex items-center justify-between px-10 py-6 bg-white ">
       {!hideSearch && (
@@ -20,7 +39,14 @@ const Taskbar = ({ title = "", onSearch, hideSearch = false }) => {
 
       <div className="flex items-center space-x-6">
         {title ? <span className="text-gray-700 font-medium hidden sm:block">{title}</span> : null}
-        <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-white">J</div>
+        <BubbleProfile 
+          name={user?.name || "User"}
+          image={user?.image}
+          size={36}
+          user={user}
+          onEditProfile={handleEditProfile}
+          onLogout={handleLogout}
+        />
       </div>
     </header>
   );
