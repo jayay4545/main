@@ -325,6 +325,15 @@ const ViewRequest = () => {
     }
   };
 
+  // Small UI formatter helpers
+  const formatRequestMode = (mode) => {
+    const normalized = (mode || '').toString().toLowerCase();
+    if (['work_from_home', 'w.f.h', 'wfh', 'work from home'].includes(normalized)) {
+      return 'W.F.H';
+    }
+    return 'On-site';
+  };
+
   // Success modal handlers
   const handleSuccessModalClose = () => {
     setSuccessModal({
@@ -337,8 +346,8 @@ const ViewRequest = () => {
   return (
     <div className="h-screen overflow-hidden bg-white flex">
       <HomeSidebar />
-      <div className="flex-1 px-10 py-6 overflow-y-auto min-h-0">
-      <Taskbar title="Transaction" />
+    <div className="flex-1 flex flex-col">
+        <Taskbar title="Transaction" />
 
       <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">
         <div className="flex-1 min-h-0 overflow-y-auto">
@@ -371,8 +380,14 @@ const ViewRequest = () => {
           </div>
         </div>
 
-        {/* Mode dropdown (grey shape) */}
-        <div className="mt-6 flex justify-center">
+        {/* Dropdown will be shown inside each section header aligned with its title */}
+
+{view === 'viewRequest' && (
+  <>
+    <div className="mt-8">
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <h4 className="text-lg font-semibold text-gray-800">View Request</h4>
           <div className="relative">
             <button
               type="button"
@@ -387,7 +402,7 @@ const ViewRequest = () => {
               <ChevronDown className="h-4 w-4" />
             </button>
             {isMenuOpen && (
-              <div className="absolute z-10 mt-2 w-44 bg-white rounded-md shadow border border-gray-200">
+              <div className="absolute right-0 z-10 mt-2 w-44 bg-white rounded-md shadow border border-gray-200">
                 <button onClick={() => handleSelect('viewRequest')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">View Request</button>
                 <button onClick={() => handleSelect('currentHolder')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Current holder</button>
                 <button onClick={() => handleSelect('verifyReturn')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Verify return</button>
@@ -395,13 +410,7 @@ const ViewRequest = () => {
             )}
           </div>
         </div>
-
-{view === 'viewRequest' && (
-  <>
-    <div className="mt-8">
-      <div className="mb-6">
-        <h4 className="text-lg font-semibold text-gray-800 mb-4">View Request</h4>
-        <div className="flex text-xs font-medium text-gray-900 uppercase tracking-wider mb-3 px-4">
+        <div className="flex text-xs font-medium text-gray-900 uppercase tracking-wider mb-4 px-4 mt-4">
           <div className="flex-1">Name</div>
           <div className="flex-1">Item</div>
           <div className="w-24 text-right">Actions</div>
@@ -476,7 +485,30 @@ const ViewRequest = () => {
 {view === 'currentHolder' && (
   <>
     <div className="mt-8">
-      <h3 className="text-2xl font-semibold text-gray-800 mb-6">Current holder</h3>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-2xl font-semibold text-gray-800">Current holder</h3>
+        <div className="relative">
+          <button
+            type="button"
+            className="w-44 h-10 bg-gray-300 rounded-md flex items-center justify-between px-4 text-gray-700"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            <span className="text-sm font-medium">
+              {view === 'viewRequest' ? 'View Request' : 
+               view === 'viewApproved' ? 'View Approved' :
+               view === 'currentHolder' ? 'Current holder' : 'Verify return'}
+            </span>
+            <ChevronDown className="h-4 w-4" />
+          </button>
+          {isMenuOpen && (
+            <div className="absolute right-0 z-10 mt-2 w-44 bg-white rounded-md shadow border border-gray-200">
+              <button onClick={() => handleSelect('viewRequest')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">View Request</button>
+              <button onClick={() => handleSelect('currentHolder')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Current holder</button>
+              <button onClick={() => handleSelect('verifyReturn')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Verify return</button>
+            </div>
+          )}
+        </div>
+      </div>
       
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <table className="w-full">
@@ -522,7 +554,7 @@ const ViewRequest = () => {
                     {row.item || 'Laptop'}
                   </td>
                   <td className="py-4 px-6 text-sm text-gray-700">
-                    {row.requestMode === 'work_from_home' ? 'W.F.H' : 'on_site'}
+                    {formatRequestMode(row.requestMode)}
                   </td>
                   <td className="py-4 px-6 text-sm text-red-600 font-medium">
                     {row.expectedReturnDate ? new Date(row.expectedReturnDate).toLocaleDateString() : '2025-10-23'}
@@ -550,7 +582,30 @@ const ViewRequest = () => {
 {view === 'verifyReturn' && (
   <>
     <div className="mt-8">
-      <h3 className="text-2xl font-semibold text-gray-800 mb-6">Verify return</h3>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-2xl font-semibold text-gray-800">Verify return</h3>
+        <div className="relative">
+          <button
+            type="button"
+            className="w-44 h-10 bg-gray-300 rounded-md flex items-center justify-between px-4 text-gray-700"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            <span className="text-sm font-medium">
+              {view === 'viewRequest' ? 'View Request' : 
+               view === 'viewApproved' ? 'View Approved' :
+               view === 'currentHolder' ? 'Current holder' : 'Verify return'}
+            </span>
+            <ChevronDown className="h-4 w-4" />
+          </button>
+          {isMenuOpen && (
+            <div className="absolute right-0 z-10 mt-2 w-44 bg-white rounded-md shadow border border-gray-200">
+              <button onClick={() => handleSelect('viewRequest')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">View Request</button>
+              <button onClick={() => handleSelect('currentHolder')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Current holder</button>
+              <button onClick={() => handleSelect('verifyReturn')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Verify return</button>
+            </div>
+          )}
+        </div>
+      </div>
       
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <table className="w-full">
@@ -596,7 +651,7 @@ const ViewRequest = () => {
                     {row.equipment_name || 'Laptop'}
                   </td>
                   <td className="py-4 px-6 text-sm text-gray-700">
-                    {row.request_mode === 'work_from_home' ? 'W.F.H' : 'on_site'}
+                    {formatRequestMode(row.request_mode)}
                   </td>
                   <td className="py-4 px-6 text-sm text-red-600 font-medium">
                     {row.return_date || row.expected_return_date || '2025-10-23'}
