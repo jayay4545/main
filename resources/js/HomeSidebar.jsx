@@ -74,7 +74,7 @@ const HomeSidebar = ({ onSelect }) => {
       {/* Sidebar */}
       <aside className="w-57 bg-gradient-to-b from-[#0064FF] to-[#053786] text-white flex flex-col h-screen overflow-hidden rounded-tr-[72px]">
         {/* Navigation */}
-        <nav className="flex-1 min-h-0 px-3 py-4 mt-3 space-y-2 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <nav className="flex-1 min-h-0 px-3 py-4 mt-4 space-y-2 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {/* Home */}
           <a href="/dashboard" className={linkClass("/dashboard")} onClick={(e) => handleMenuClick("/dashboard", e)}>
             <Eye className="h-5 w-5" />

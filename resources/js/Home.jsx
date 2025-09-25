@@ -15,7 +15,7 @@ const HomePage = () => {
         <Taskbar title="John F." />
 
         {/* Main Content Area */}
-        <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">
+        <main className="px-10 pt-3 pb-6 mb-10 flex flex-col overflow-hidden">
           <h2 className="text-4xl font-bold text-[#2262C6]">Dashboard</h2>
 
             <>
@@ -48,87 +48,111 @@ const HomePage = () => {
           <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="grid grid-cols-2 gap-6 mt-6">
             {/* Equipment by Category */}
-           <div className="bg-white rounded-xl drop-shadow-[0_4px_6px_rgba(59,130,246,0.4)] p-6 py-3 px-4">
-              <h3 className="text-lg font-semibold mb-4">Equipment by Category</h3>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left border-b">
-                    <th className="pb-2">Items</th>
-                    <th className="pb-2">Available</th>
-                    <th className="pb-2">Total</th>
-                    <th className="pb-2">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b">
-                    <td>Laptop</td>
-                    <td>23</td>
-                    <td>30</td>
-                    <td className="text-green-600">77% Available</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td>Mouse</td>
-                    <td>23</td>
-                    <td>30</td>
-                    <td className="text-green-600">77% Available</td>
-                  </tr>
-                  <tr>
-                    <td>Keyboard</td>
-                    <td>3</td>
-                    <td>30</td>
-                    <td className="text-red-600">10% Available</td>
-                  </tr>
-                </tbody>
-              </table>
+           <div className="bg-white rounded-2xl border border-gray-100 shadow-md p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Equipment by Category</h3>
+              </div>
+              <div className="overflow-hidden rounded-xl border border-gray-200">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr className="text-left">
+                      <th className="py-2.5 px-4 font-semibold">Items</th>
+                      <th className="py-2.5 px-4 font-semibold">Available</th>
+                      <th className="py-2.5 px-4 font-semibold">Total</th>
+                      <th className="py-2.5 px-4 font-semibold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    <tr className="hover:bg-blue-50/40">
+                      <td className="py-2.5 px-4">Laptop</td>
+                      <td className="py-2.5 px-4">23</td>
+                      <td className="py-2.5 px-4">30</td>
+                      <td className="py-2.5 px-4">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">77% Available</span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-blue-50/40">
+                      <td className="py-2.5 px-4">Mouse</td>
+                      <td className="py-2.5 px-4">23</td>
+                      <td className="py-2.5 px-4">30</td>
+                      <td className="py-2.5 px-4">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">77% Available</span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-blue-50/40">
+                      <td className="py-2.5 px-4">Keyboard</td>
+                      <td className="py-2.5 px-4">3</td>
+                      <td className="py-2.5 px-4">30</td>
+                      <td className="py-2.5 px-4">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">10% Available</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* New Arrival */}
-            <div className="bg-white rounded-xl drop-shadow-[0_4px_6px_rgba(59,130,246,0.4)] p-6 py-3 px-4">
-              <h3 className="text-lg font-semibold mb-4">New Arrival</h3>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left border-b">
-                    <th className="pb-2">Date</th>
-                    <th className="pb-2">Items</th>
-                    <th className="pb-2">Available</th>
-                    <th className="pb-2">Qty</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b">
-                    <td>Sept 04 2025</td>
-                    <td>Laptop</td>
-                    <td>20</td>
-                    <td>20</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td>Sept 04 2025</td>
-                    <td>Mouse</td>
-                    <td>10</td>
-                    <td>10</td>
-                  </tr>
-                  <tr>
-                    <td>Sept 04 2025</td>
-                    <td>Keyboard</td>
-                    <td>10</td>
-                    <td>10</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-md p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">New Arrival</h3>
+              </div>
+              <div className="overflow-hidden rounded-xl border border-gray-200">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr className="text-left">
+                      <th className="py-2.5 px-4 font-semibold">Date</th>
+                      <th className="py-2.5 px-4 font-semibold">Items</th>
+                      <th className="py-2.5 px-4 font-semibold">Available</th>
+                      <th className="py-2.5 px-4 font-semibold text-right">Qty</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    <tr className="hover:bg-blue-50/40">
+                      <td className="py-2.5 px-4">Sept 04 2025</td>
+                      <td className="py-2.5 px-4">Laptop</td>
+                      <td className="py-2.5 px-4">20</td>
+                      <td className="py-2.5 px-4 text-right">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">20</span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-blue-50/40">
+                      <td className="py-2.5 px-4">Sept 04 2025</td>
+                      <td className="py-2.5 px-4">Mouse</td>
+                      <td className="py-2.5 px-4">10</td>
+                      <td className="py-2.5 px-4 text-right">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">10</span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-blue-50/40">
+                      <td className="py-2.5 px-4">Sept 04 2025</td>
+                      <td className="py-2.5 px-4">Keyboard</td>
+                      <td className="py-2.5 px-4">10</td>
+                      <td className="py-2.5 px-4 text-right">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">10</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
           
           {/* Additional Boxes */}
           <div className="grid grid-cols-2 gap-6 mt-6">
             {/* Report Overview */}
-           <div className="bg-white rounded-xl drop-shadow-[0_4px_6px_rgba(59,130,246,0.4)] p-6 py-3 px-4">
-              <h3 className="text-lg font-semibold mb-4">Report Overview</h3>
-              <div className="h-40 bg-gray-100 rounded"></div>
+           <div className="bg-white rounded-2xl border border-gray-100 shadow-md p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Report Overview</h3>
+              </div>
+              <div className="h-40 bg-gray-100 rounded-xl border border-dashed border-gray-300"></div>
             </div>
             {/* Add Category */}
-           <div className="bg-white rounded-xl drop-shadow-[0_4px_6px_rgba(59,130,246,0.4)] p-6 py-3 px-4">
-              <h3 className="text-lg font-semibold mb-4">Add Category</h3>
-              <div className="h-40 bg-gray-100 rounded"></div>
+           <div className="bg-white rounded-2xl border border-gray-100 shadow-md p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Add Category</h3>
+              </div>
+              <div className="h-40 bg-gray-100 rounded-xl border border-dashed border-gray-300"></div>
             </div>
           </div>
           </div>

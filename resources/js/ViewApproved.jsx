@@ -110,6 +110,13 @@ const ViewApproved = () => {
     }
   };
 
+  // UI helpers
+  const formatRequestMode = (mode) => {
+    const normalized = (mode || '').toString().toLowerCase();
+    if (['work_from_home', 'wfh', 'work from home'].includes(normalized)) return 'W.F.H';
+    return 'On-site';
+  };
+
   const handleSelect = (next) => {
     setView(next);
     setIsMenuOpen(false);
@@ -196,7 +203,7 @@ const ViewApproved = () => {
         <HomeSidebar />
       </div>
       
-      <div className="flex-1 px-10 py-6 overflow-y-auto min-h-0">
+      <div className="flex-1 flex flex-col">
         <Taskbar title="Transaction" />
 
         <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">
@@ -229,46 +236,46 @@ const ViewApproved = () => {
             </div>
           </div>
 
-          {/* Mode dropdown */}
-          <div className="mt-6 flex justify-center">
-            <div className="relative">
-              <button
-                type="button"
-                className="w-44 h-10 bg-gray-300 rounded-md flex items-center justify-between px-4 text-gray-700"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-              >
-                <span className="text-sm font-medium">
-                  {view === 'viewApproved' ? 'View Approved' : 
-                   view === 'currentHolder' ? 'Current holder' : 'Verify return'}
-                </span>
-                <ChevronDown className="h-4 w-4" />
-              </button>
-              {isMenuOpen && (
-                <div className="absolute z-10 mt-2 w-44 bg-white rounded-md shadow border border-gray-200">
-                  <button onClick={() => handleSelect('viewApproved')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">View Approved</button>
-                  <button onClick={() => handleSelect('currentHolder')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Current holder</button>
-                  <button onClick={() => handleSelect('verifyReturn')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Verify return</button>
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Mode dropdown moved to section headers for alignment with titles */}
 
           {view === 'viewApproved' && (
             <>
-              <h3 className="mt-10 text-3xl font-semibold text-gray-700">View Approved</h3>
-              <div className="mt-4 bg-white rounded-xl shadow p-6">
+              <div className="mt-10 flex items-center justify-between">
+                <h3 className="text-3xl font-semibold text-gray-700">View Approved</h3>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="w-44 h-10 bg-gray-300 rounded-md flex items-center justify-between px-4 text-gray-700"
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  >
+                    <span className="text-sm font-medium">
+                      {view === 'viewApproved' ? 'View Approved' : 
+                       view === 'currentHolder' ? 'Current holder' : 'Verify return'}
+                    </span>
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                  {isMenuOpen && (
+                    <div className="absolute right-0 z-10 mt-2 w-44 bg-white rounded-md shadow border border-gray-200">
+                      <button onClick={() => handleSelect('viewApproved')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">View Approved</button>
+                      <button onClick={() => handleSelect('currentHolder')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Current holder</button>
+                      <button onClick={() => handleSelect('verifyReturn')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Verify return</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="mt-4 bg-white rounded-2xl shadow p-6 border border-gray-100">
                 <table className="w-full text-sm text-left">
-                  <thead>
-                    <tr className="border-b text-gray-600">
-                      <th className="pb-2">Name</th>
-                      <th className="pb-2">Position</th>
-                      <th className="pb-2">Item</th>
-                      <th className="pb-2">Status</th>
-                      <th className="pb-2">Approved by</th>
-                      <th className="pb-2 text-right">Actions</th>
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr className="border-b">
+                      <th className="py-2 px-3">Name</th>
+                      <th className="py-2 px-3">Position</th>
+                      <th className="py-2 px-3">Item</th>
+                      <th className="py-2 px-3">Status</th>
+                      <th className="py-2 px-3">Approved by</th>
+                      <th className="py-2 px-3 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-100">
                     {loading ? (
                       <tr>
                         <td colSpan="6" className="py-8 text-center text-gray-500">
@@ -298,12 +305,12 @@ const ViewApproved = () => {
                               : 'hover:bg-blue-50'
                           }`}
                         >
-                          <td className="py-4">{row.full_name || 'N/A'}</td>
-                          <td className="py-4">{row.position || 'N/A'}</td>
-                          <td className="py-4">{row.equipment_name || 'N/A'}</td>
-                          <td className="py-4 text-green-600">{row.status || 'N/A'}</td>
-                          <td className="py-4">{row.approved_by_name || 'N/A'}</td>
-                          <td className="py-4">
+                          <td className="py-3 px-3">{row.full_name || 'N/A'}</td>
+                          <td className="py-3 px-3">{row.position || 'N/A'}</td>
+                          <td className="py-3 px-3">{row.equipment_name || 'N/A'}</td>
+                          <td className="py-3 px-3"><span className="px-2.5 py-0.5 rounded-full text-xs bg-green-100 text-green-700">{row.status || 'approved'}</span></td>
+                          <td className="py-3 px-3">{row.approved_by_name || 'N/A'}</td>
+                          <td className="py-3 px-3">
                             <div className="flex items-center justify-end space-x-3">
                               <button
                                 onClick={(e) => {
@@ -337,20 +344,42 @@ const ViewApproved = () => {
 
           {view === 'currentHolder' && (
             <>
-              <h3 className="mt-10 text-3xl font-semibold text-gray-700">Current holder</h3>
-              <div className="mt-4 bg-white rounded-xl shadow p-6">
+              <div className="mt-10 flex items-center justify-between">
+                <h3 className="text-3xl font-semibold text-gray-700">Current holder</h3>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="w-44 h-10 bg-gray-300 rounded-md flex items-center justify-between px-4 text-gray-700"
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  >
+                    <span className="text-sm font-medium">
+                      {view === 'viewApproved' ? 'View Approved' : 
+                       view === 'currentHolder' ? 'Current holder' : 'Verify return'}
+                    </span>
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                  {isMenuOpen && (
+                    <div className="absolute right-0 z-10 mt-2 w-44 bg-white rounded-md shadow border border-gray-200">
+                      <button onClick={() => handleSelect('viewApproved')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">View Approved</button>
+                      <button onClick={() => handleSelect('currentHolder')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Current holder</button>
+                      <button onClick={() => handleSelect('verifyReturn')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Verify return</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="mt-4 bg-white rounded-2xl shadow p-6 border border-gray-100">
                 <table className="w-full text-sm text-left">
-                  <thead>
-                    <tr className="border-b text-gray-600">
-                      <th className="pb-2">Name</th>
-                      <th className="pb-2">Position</th>
-                      <th className="pb-2">Item</th>
-                      <th className="pb-2">Request mode</th>
-                      <th className="pb-2">End Date</th>
-                      <th className="pb-2 text-right">Actions</th>
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr className="border-b">
+                      <th className="py-2 px-3">Name</th>
+                      <th className="py-2 px-3">Position</th>
+                      <th className="py-2 px-3">Item</th>
+                      <th className="py-2 px-3">Request mode</th>
+                      <th className="py-2 px-3">End Date</th>
+                      <th className="py-2 px-3 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-100">
                     {loading ? (
                       <tr>
                         <td colSpan="6" className="py-8 text-center text-gray-500">
@@ -380,12 +409,12 @@ const ViewApproved = () => {
                               : 'hover:bg-blue-50'
                           }`}
                         >
-                          <td className="py-4">{row.full_name || 'N/A'}</td>
-                          <td className="py-4">{row.position || 'N/A'}</td>
-                          <td className="py-4">{row.equipment_name || 'N/A'}</td>
-                          <td className="py-4">{row.request_mode || 'Onsite'}</td>
-                          <td className="py-4 text-red-600">{row.expected_return_date || 'N/A'}</td>
-                          <td className="py-4">
+                          <td className="py-3 px-3">{row.full_name || 'N/A'}</td>
+                          <td className="py-3 px-3">{row.position || 'N/A'}</td>
+                          <td className="py-3 px-3">{row.equipment_name || 'N/A'}</td>
+                          <td className="py-3 px-3">{formatRequestMode(row.request_mode)}</td>
+                          <td className="py-3 px-3 text-red-600">{row.expected_return_date || 'N/A'}</td>
+                          <td className="py-3 px-3">
                             <div className="flex items-center justify-end space-x-4 text-gray-700">
                               <span className="px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-700">Active</span>
                               <span className="px-3 py-1 rounded-full text-xs bg-green-600 text-white">Released</span>
@@ -402,19 +431,41 @@ const ViewApproved = () => {
 
           {view === 'verifyReturn' && (
             <>
-              <h3 className="mt-10 text-3xl font-semibold text-gray-700">Verify return</h3>
-              <div className="mt-4 bg-white rounded-xl shadow p-6">
+              <div className="mt-10 flex items-center justify-between">
+                <h3 className="text-3xl font-semibold text-gray-700">Verify return</h3>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="w-44 h-10 bg-gray-300 rounded-md flex items-center justify-between px-4 text-gray-700"
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  >
+                    <span className="text-sm font-medium">
+                      {view === 'viewApproved' ? 'View Approved' : 
+                       view === 'currentHolder' ? 'Current holder' : 'Verify return'}
+                    </span>
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                  {isMenuOpen && (
+                    <div className="absolute right-0 z-10 mt-2 w-44 bg-white rounded-md shadow border border-gray-200">
+                      <button onClick={() => handleSelect('viewApproved')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">View Approved</button>
+                      <button onClick={() => handleSelect('currentHolder')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Current holder</button>
+                      <button onClick={() => handleSelect('verifyReturn')} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50">Verify return</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="mt-4 bg-white rounded-2xl shadow p-6 border border-gray-100">
                 <table className="w-full text-sm text-left">
-                  <thead>
-                    <tr className="border-b text-gray-600">
-                      <th className="pb-2">Name</th>
-                      <th className="pb-2">Position</th>
-                      <th className="pb-2">Item</th>
-                      <th className="pb-2">End Date</th>
-                      <th className="pb-2 text-right">Actions</th>
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr className="border-b">
+                      <th className="py-2 px-3">Name</th>
+                      <th className="py-2 px-3">Position</th>
+                      <th className="py-2 px-3">Item</th>
+                      <th className="py-2 px-3">End Date</th>
+                      <th className="py-2 px-3 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-100">
                     {loading ? (
                       <tr>
                         <td colSpan="5" className="py-8 text-center text-gray-500">
@@ -444,11 +495,11 @@ const ViewApproved = () => {
                               : 'hover:bg-blue-50'
                           }`}
                         >
-                          <td className="py-4">{row.full_name || 'N/A'}</td>
-                          <td className="py-4">{row.position || 'N/A'}</td>
-                          <td className="py-4">{row.equipment_name || 'N/A'}</td>
-                          <td className="py-4 text-red-600">{row.return_date || row.expected_return_date || 'N/A'}</td>
-                          <td className="py-4">
+                          <td className="py-3 px-3">{row.full_name || 'N/A'}</td>
+                          <td className="py-3 px-3">{row.position || 'N/A'}</td>
+                          <td className="py-3 px-3">{row.equipment_name || 'N/A'}</td>
+                          <td className="py-3 px-3 text-red-600">{row.return_date || row.expected_return_date || 'N/A'}</td>
+                          <td className="py-3 px-3">
                             <div className="flex items-center justify-end space-x-3">
                               <span className="px-3 py-1 rounded-full text-xs bg-yellow-100 text-yellow-700">Pending</span>
                               <span className="px-3 py-1 rounded-full text-xs bg-green-600 text-white">Returned</span>
