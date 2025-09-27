@@ -4,6 +4,28 @@ import Taskbar from "./components/Taskbar.jsx";
 
 const HomePage = () => {
   const [activeView, setActiveView] = useState("Dashboard");
+  
+  // Sample user data - you can replace this with actual user data from your auth system
+  const user = {
+    name: "John Francisco",
+    role: "Admin",
+    email: "johnsakkphil@gmail.com",
+    phone: "09080552096",
+    location: "Biñan, Laguna",
+    image: null // You can add a profile image URL here
+  };
+
+  const handleEditProfile = () => {
+    console.log('Edit profile clicked');
+    // You can add navigation to edit profile page here
+    // For example: window.location.href = '/edit-profile';
+  };
+
+  const handleLogout = () => {
+    console.log('Logout clicked');
+    // You can add logout logic here
+    // For example: clear user session, redirect to login page
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-white">
@@ -12,7 +34,12 @@ const HomePage = () => {
 
       {/* Main Section */}
       <div className="flex-1 flex flex-col">
-        <Taskbar title="John F." />
+        <Taskbar 
+          title="John F." 
+          user={user}
+          onEditProfile={handleEditProfile}
+          onLogout={handleLogout}
+        />
 
         {/* Main Content Area */}
         <main className="px-10 pt-3 pb-6 mb-10 flex flex-col overflow-hidden">
