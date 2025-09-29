@@ -5,13 +5,19 @@ import '../../css/profile-modal.css';
 const ProfileDetailsModal = ({ isOpen, onClose, user }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
   const [editData, setEditData] = useState({
     firstName: user?.name?.split(' ')[0] || '',
     lastName: user?.name?.split(' ').slice(1).join(' ') || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    location: user?.location || '',
-    role: user?.role || ''
+    location: user?.location || user?.department || 'IT Department',
+    role: user?.role || 'IT Admin'
   });
 
   useEffect(() => {
@@ -22,11 +28,43 @@ const ProfileDetailsModal = ({ isOpen, onClose, user }) => {
 
   if (!isOpen) return null;
 
-  const handleSave = () => {
-    // Here you would typically save the data to your backend
-    console.log('Saving profile data:', editData);
-    setIsEditing(false);
-    // You might want to update the user data in your parent component
+  const handleSave = async () => {
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+        },
+        body: JSON.stringify({
+          name: `${editData.firstName} ${editData.lastName}`.trim(),
+          email: editData.email,
+          phone: editData.phone,
+          position: editData.role,
+          department: editData.location,
+          location: editData.location,
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Update the user data in the parent component
+        if (user && typeof user === 'object') {
+          Object.assign(user, result.data);
+        }
+        setIsEditing(false);
+        alert('Profile updated successfully!');
+        // Optionally reload the page to reflect changes
+        window.location.reload();
+      } else {
+        alert(result.message || 'Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Failed to update profile. Please try again.');
+    }
   };
 
   const handleCancel = () => {
@@ -35,10 +73,46 @@ const ProfileDetailsModal = ({ isOpen, onClose, user }) => {
       lastName: user?.name?.split(' ').slice(1).join(' ') || '',
       email: user?.email || '',
       phone: user?.phone || '',
-      location: user?.location || '',
-      role: user?.role || ''
+      location: user?.location || user?.department || 'IT Department',
+      role: user?.role || 'IT Admin'
     });
     setIsEditing(false);
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert('New passwords do not match!');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/profile/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+        },
+        body: JSON.stringify(passwordData),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        alert('Password changed successfully!');
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+        setShowPasswordModal(false);
+      } else {
+        alert(result.message || 'Failed to change password');
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      alert('Failed to change password. Please try again.');
+    }
   };
 
   const handleClose = () => {
@@ -73,9 +147,9 @@ const ProfileDetailsModal = ({ isOpen, onClose, user }) => {
               )}
             </div>
             <div className="flex-1">
-              <h3 className="text-2xl font-bold">{user?.name || 'User'}</h3>
-              <p className="text-blue-100 text-lg">{user?.role || 'Admin'}</p>
-              <p className="text-blue-100 text-sm">{user?.location || 'Location'}</p>
+              <h3 className="text-2xl font-bold">{user?.name || 'Loading...'}</h3>
+              <p className="text-blue-100 text-lg">{user?.role || 'IT Admin'}</p>
+              <p className="text-blue-100 text-sm">{user?.location || user?.department || 'IT Department'}</p>
             </div>
             <button
               onClick={() => setIsEditing(!isEditing)}
@@ -187,10 +261,10 @@ const ProfileDetailsModal = ({ isOpen, onClose, user }) => {
                   onChange={(e) => setEditData({...editData, role: e.target.value})}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2262C6] focus:border-[#2262C6] transition-colors"
                 >
-                  <option value="Admin">Admin</option>
-                  <option value="Manager">Manager</option>
+                  <option value="IT Admin">IT Admin</option>
+                  <option value="Super Administrator">Super Administrator</option>
                   <option value="Employee">Employee</option>
-                  <option value="User">User</option>
+                  <option value="Manager">Manager</option>
                 </select>
               ) : (
                 <p className="text-gray-900 text-lg font-medium">{editData.role}</p>
@@ -200,22 +274,96 @@ const ProfileDetailsModal = ({ isOpen, onClose, user }) => {
 
           {/* Action Buttons */}
           {isEditing && (
-            <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+            <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
               <button
-                onClick={handleCancel}
-                className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors font-medium"
+                onClick={() => setShowPasswordModal(true)}
+                className="px-6 py-3 text-[#2262C6] bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors font-medium"
               >
-                Cancel
+                Change Password
               </button>
-              <button
-                onClick={handleSave}
-                className="px-6 py-3 bg-[#2262C6] text-white hover:bg-[#1a4a9c] rounded-xl transition-colors font-medium"
-              >
-                Save Changes
-              </button>
+              <div className="flex space-x-4">
+                <button
+                  onClick={handleCancel}
+                  className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="px-6 py-3 bg-[#2262C6] text-white hover:bg-[#1a4a9c] rounded-xl transition-colors font-medium"
+                >
+                  Save Changes
+                </button>
+              </div>
             </div>
           )}
         </div>
+
+        {/* Password Change Modal */}
+        {showPasswordModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Change Password</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                  <input
+                    type="password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2262C6] focus:border-[#2262C6] transition-colors"
+                    placeholder="Enter current password"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                  <input
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2262C6] focus:border-[#2262C6] transition-colors"
+                    placeholder="Enter new password"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2262C6] focus:border-[#2262C6] transition-colors"
+                    placeholder="Confirm new password"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-4 mt-6">
+                <button
+                  onClick={() => {
+                    setShowPasswordModal(false);
+                    setPasswordData({
+                      currentPassword: '',
+                      newPassword: '',
+                      confirmPassword: ''
+                    });
+                  }}
+                  className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleChangePassword}
+                  className="px-6 py-3 bg-[#2262C6] text-white hover:bg-[#1a4a9c] rounded-xl transition-colors font-medium"
+                >
+                  Change Password
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
