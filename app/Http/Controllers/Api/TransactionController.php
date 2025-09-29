@@ -71,9 +71,12 @@ class TransactionController extends Controller
                     'brand' => $transaction->equipment->brand,
                 ],
                 'employee' => [
-                    'name' => $transaction->employee->name,
+                    'name' => $transaction->employee->first_name . ' ' . $transaction->employee->last_name,
+                    'first_name' => $transaction->employee->first_name,
+                    'last_name' => $transaction->employee->last_name,
+                    'full_name' => $transaction->employee->first_name . ' ' . $transaction->employee->last_name,
                     'position' => $transaction->employee->position,
-                    'client' => $transaction->employee->client,
+                    'department' => $transaction->employee->department,
                 ],
                 'release_info' => $transaction->release_date ? [
                     'date' => date('F j, Y', strtotime($transaction->release_date)),
@@ -175,6 +178,40 @@ class TransactionController extends Controller
                 ];
                 $normalized = $statusMap[$status] ?? $status;
                 $query->where('transactions.status', $normalized);
+            }
+
+            // Optional filter by related request id (to map approved requests to their transaction)
+            $requestId = request()->query('request_id');
+            if (!empty($requestId)) {
+                // First, constrain by direct linkage
+                $query->where(function($q) use ($requestId) {
+                    $q->where('transactions.request_id', $requestId);
+                });
+
+                // Additionally, if the direct linkage was not set in older rows,
+                // also match by employee_id and equipment_id derived from the request
+                try {
+                    $req = DB::table('requests')->where('id', $requestId)->first();
+                    if ($req) {
+                        $query->orWhere(function($q) use ($req) {
+                            $q->where('transactions.employee_id', $req->employee_id)
+                              ->where('transactions.equipment_id', $req->equipment_id);
+                        });
+                    }
+                } catch (\Exception $e) {
+                    // Best-effort fallback; ignore if requests table not available
+                }
+            }
+
+            // Optional direct filters for convenience
+            $employeeId = request()->query('employee_id');
+            if (!empty($employeeId)) {
+                $query->where('transactions.employee_id', $employeeId);
+            }
+
+            $equipmentId = request()->query('equipment_id');
+            if (!empty($equipmentId)) {
+                $query->where('transactions.equipment_id', $equipmentId);
             }
 
             $transactions = $query->get();

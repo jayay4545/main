@@ -71,7 +71,7 @@ class EquipmentController extends Controller
     {
         try {
             $validated = $request->validate([
-                'category' => 'required|string',
+                'category_id' => 'required|exists:categories,id',
                 'serial_number' => 'required|string|unique:equipment',
                 'brand' => 'required|string',
                 'supplier' => 'required|string',
@@ -100,16 +100,9 @@ class EquipmentController extends Controller
                 $receiptImagePath = $request->file('receipt_image')->store('equipment/receipts', 'public');
             }
 
-            // Get or create category
-            $category = Category::firstOrCreate(
-                ['name' => $request->category],
-                ['description' => 'Auto-created category']
-            );
-
             $equipment = Equipment::create([
                 'name' => $request->brand, // Using brand as name
                 'brand' => $request->brand,
-                'model' => $request->category,
                 'serial_number' => $request->serial_number,
                 'specifications' => $request->description,
                 'status' => 'available',
@@ -119,7 +112,7 @@ class EquipmentController extends Controller
                 'item_image' => $itemImagePath,
                 'receipt_image' => $receiptImagePath,
                 'purchase_date' => now(),
-                'category_id' => $category->id,
+                'category_id' => $request->category_id,
             ]);
 
             $equipment->load('category');

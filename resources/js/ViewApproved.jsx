@@ -123,16 +123,38 @@ const ViewApproved = () => {
   };
 
   // Handle release action
-  const handleRelease = async (transactionData) => {
+  const handleRelease = async (data) => {
     try {
-      const response = await transactionService.release(transactionData.id, {
-        notes: transactionData.notes,
-        condition_on_issue: transactionData.condition_on_issue
+      // Resolve the actual transaction id from the approved request row
+      let txId = null;
+
+      // Primary: by request_id
+      const byRequest = await transactionService.getAll({ request_id: data.id });
+      if (byRequest?.success && Array.isArray(byRequest.data) && byRequest.data.length > 0) {
+        txId = byRequest.data[0].id;
+      }
+
+      // Fallback: by employee and equipment for older rows not linked
+      if (!txId && (data.employee_id && data.equipment_id)) {
+        const byRefs = await transactionService.getAll({ employee_id: data.employee_id, equipment_id: data.equipment_id, status: 'pending' });
+        if (byRefs?.success && Array.isArray(byRefs.data) && byRefs.data.length > 0) {
+          txId = byRefs.data[0].id;
+        }
+      }
+
+      if (!txId) {
+        alert('No transaction found for this approved request to release.');
+        return;
+      }
+
+      const response = await transactionService.release(txId, {
+        notes: data.notes,
+        condition_on_issue: data.condition_on_issue
       });
       
       if (response.success) {
         // Update the local state
-        setApproved(prev => prev.filter(item => item.id !== transactionData.id));
+        setApproved(prev => prev.filter(item => item.id !== data.id));
         setCurrentHolders(prev => [...prev, response.data]);
         
         // Update dashboard stats
@@ -157,19 +179,37 @@ const ViewApproved = () => {
   // Handle print action
   const handlePrint = async (transactionData) => {
     try {
-      // If transactionData doesn't have an id, it might be the wrong format
       if (!transactionData || !transactionData.id) {
-        console.error('Invalid transaction data for printing:', transactionData);
-        alert('Error: Invalid transaction data for printing');
+        console.error('Invalid row for printing:', transactionData);
+        alert('Error: Invalid data for printing');
         return;
       }
 
-      const response = await transactionService.print(transactionData.id);
+      // Rows in ViewApproved are requests; resolve the related transaction by request_id
+      const txList = await transactionService.getAll({ request_id: transactionData.id });
+      if (!txList?.success || !Array.isArray(txList.data) || txList.data.length === 0) {
+        alert('No transaction found for this approved request.');
+        return;
+      }
+
+      const tx = txList.data[0];
+      const response = await transactionService.print(tx.id);
       
       if (response.success) {
+        // Flatten API response to the shape expected by PrintReceipt
+        const r = response.data;
+        const flat = {
+          full_name: r?.employee?.full_name || `${r?.employee?.first_name || ''} ${r?.employee?.last_name || ''}`.trim(),
+          position: r?.employee?.position || '',
+          department: r?.employee?.department || '',
+          equipment_name: r?.equipment?.name || tx?.equipment_name || '',
+          serial_number: r?.equipment?.serial_number || '',
+          notes: r?.release_info?.notes || tx?.notes || '',
+        };
+
         setPrintModal({
           isOpen: true,
-          transactionData: response.data
+          transactionData: flat,
         });
       } else {
         alert('Error generating print data: ' + response.message);

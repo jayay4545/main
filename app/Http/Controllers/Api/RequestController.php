@@ -50,6 +50,13 @@ class RequestController extends Controller
         if ($request->has('equipment_id')) {
                 $query->where('requests.equipment_id', $request->equipment_id);
         }
+        
+        // Filter by equipment type (e.g., laptop)
+        if ($request->has('equipment_type')) {
+            $equipmentType = $request->equipment_type;
+            $query->join('categories', 'equipment.category_id', '=', 'categories.id')
+                  ->where('categories.name', 'like', '%' . $equipmentType . '%');
+        }
 
         // Filter by request type
         if ($request->has('request_type')) {

@@ -43,14 +43,29 @@ const Equipment = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Fetch categories first
         const catRes = await api.get('/categories');
-        const eqRes = await api.get('/equipment');
         if (catRes?.data?.success && Array.isArray(catRes.data.data)) {
-          setCategories(catRes.data.data);
-        }
-        // eqRes.data.data is a pagination object, actual array is eqRes.data.data.data
-        if (eqRes?.data?.success && eqRes.data.data && Array.isArray(eqRes.data.data.data)) {
-          setEquipment(eqRes.data.data.data);
+          const categoriesData = catRes.data.data;
+          setCategories(categoriesData);
+          
+          // Then fetch equipment
+          const eqRes = await api.get('/equipment');
+          if (eqRes?.data?.success && eqRes.data.data && Array.isArray(eqRes.data.data.data)) {
+            const equipmentData = eqRes.data.data.data;
+            
+            // Separate assigned and unassigned equipment
+            const assignedEquipment = equipmentData.filter(eq => eq.category_id);
+            const unassignedEquipment = equipmentData.filter(eq => !eq.category_id);
+            
+            // Update categories with equipment count
+            const categoriesWithCount = categoriesData.map(cat => ({
+              ...cat,
+              qty: `${assignedEquipment.filter(eq => eq.category_id === cat.id).length}`
+            }));
+            setCategories(categoriesWithCount);
+            setEquipment(assignedEquipment);
+          }
         }
       } catch (e) {
         console.error('Failed to fetch categories/equipment:', e);
@@ -70,10 +85,10 @@ const Equipment = () => {
             <h2 className="text-3xl font-bold text-blue-600">Equipment</h2>
             {!selected && (
               <>
-                <h3 className="text-base font-semibold text-gray-700 mt-3">Inventory</h3>
+                <h3 className="text-base font-semibold text-gray-700 mt-3">Categories</h3>
                 <div className="mt-6 grid grid-cols-4 gap-6">
                   {categories.map((cat) => (
-                    <div key={cat.id} className="flex flex-col items-center">
+                    <div key={cat.id} className="group relative">
                       <Card
                         selected={selected === cat.name}
                         name={cat.name}
@@ -81,17 +96,28 @@ const Equipment = () => {
                         image={cat.image}
                         onClick={() => setSelected(cat.name)}
                       />
-                      {/* Equipment items for this category */}
-                      <div className="mt-2 w-full flex flex-col items-center">
-                                      {equipment
-                                        .filter(eq => eq.category_id === cat.id)
-                                        .filter(eq => !(eq.name === 'Lenovo' && eq.serial_number === '87123qwe'))
-                                        .map(eq => (
-                                          <div key={eq.id} className="w-full bg-gray-50 rounded p-2 mb-1 text-xs text-gray-700 flex items-center justify-between">
-                                            <span>{eq.name}</span>
-                                            <span>{eq.serial_number}</span>
-                                          </div>
-                                        ))}
+                      {/* Equipment items for this category - Shows on hover */}
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                        <div className="p-4 max-h-96 overflow-y-auto">
+                        {equipment
+                          .filter(eq => eq.category_id === cat.id)
+                          .map(eq => (
+                            <div key={eq.id} className="w-full bg-gray-50 rounded-lg p-3 mb-2 text-xs text-gray-700 hover:bg-blue-50/50 transition-colors">
+                              <div className="flex items-center space-x-2">
+                                <span>{eq.brand || eq.name}</span>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium
+                                  ${eq.status === 'available' ? 'bg-green-100 text-green-800' : ''}
+                                  ${eq.status === 'in_use' ? 'bg-blue-100 text-blue-800' : ''}
+                                  ${eq.status === 'maintenance' ? 'bg-yellow-100 text-yellow-800' : ''}
+                                  ${eq.status === 'retired' ? 'bg-gray-100 text-gray-800' : ''}
+                                `}>
+                                  {eq.status}
+                                </span>
+                              </div>
+                              <span className="text-gray-500">{eq.serial_number}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ))}
