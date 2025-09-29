@@ -388,8 +388,8 @@ const UsersPage = () => {
 
       {/* Add User Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-gray-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-auto">
+         <div className="fixed inset-0 bg-gray-500 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
+         <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-6">
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-8 py-6 rounded-t-xl border-b border-blue-200">
               <div className="flex items-center justify-between">
@@ -518,7 +518,7 @@ const UsersPage = () => {
 
       {/* Edit User Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-gray-50 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
             <div className="p-6">
               {/* Header with title and close button */}
@@ -646,8 +646,8 @@ const UsersPage = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+         <div className="fixed inset-0 bg-gray-500 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="relative p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Delete User</h3>
               <p className="text-sm text-gray-500 mb-6">
@@ -677,8 +677,8 @@ const UsersPage = () => {
 
       {/* View User Modal */}
       {showViewModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold text-blue-600">User Details</h3>
