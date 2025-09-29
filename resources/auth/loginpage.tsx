@@ -38,22 +38,57 @@ const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
     setErrors({});
     
     try {
-      // Simulate API call
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          // Simulate success for demo purposes
-          // In real app, replace with actual authentication logic
-          if (email.includes('@') && password.length >= 6) {
-            resolve(true);
-          } else {
-            reject(new Error('Invalid credentials'));
-          }
-        }, 1500);
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+        },
+        credentials: 'same-origin', // Include cookies for session authentication
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password,
+        }),
       });
+
+      // Check if the response is a redirect (status 302)
+      if (response.redirected || response.status === 302) {
+        // Login was successful and we were redirected
+        console.log('Login successful - redirected to dashboard');
+        console.log('Cookies after login:', document.cookie);
+        
+        // Check if session cookie is now available
+        const sessionCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('laravel-session='));
+        console.log('Session cookie after login:', sessionCookie || 'NOT FOUND');
+        
+        // Redirect to dashboard
+        window.location.href = '/dashboard';
+        return;
+      }
       
-      onAuthSuccess();
+      // If it's a JSON response, handle it normally
+      const data = await response.json();
+      
+      // Debug: Log the response
+      console.log('Login response:', data);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('Cookies after login:', document.cookie);
+
+      if (data.success) {
+        // Store user data in localStorage for frontend use
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Debug: Check if session cookie is now available
+        const sessionCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('laravel-session='));
+        console.log('Session cookie after login:', sessionCookie || 'NOT FOUND');
+        
+        onAuthSuccess();
+      } else {
+        setErrors({ general: data.message || 'Login failed. Please try again.' });
+      }
     } catch (error) {
-      setErrors({ general: 'Invalid email or password. Please try again.' });
+      console.error('Login error:', error);
+      setErrors({ general: 'Network error. Please check your connection and try again.' });
     } finally {
       setIsLoading(false);
     }

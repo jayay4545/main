@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>iREPLY - Login</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
@@ -76,14 +77,20 @@
 </head>
 <body>
   <div class="login-box">
+    @if ($errors->any())
+      <div class="alert alert-danger">
+        @foreach ($errors->all() as $error)
+          <div>{{ $error }}</div>
+        @endforeach
+      </div>
+    @endif
 
-    <form method="POST" action="{{ route('login') }}">
+    <form method="POST" action="{{ route('login.post') }}">
     @csrf
-    <input type="text" class="form-control" name="email" placeholder="User ID" required>
+    <input type="text" class="form-control" name="email" placeholder="User ID" value="{{ old('email') }}" required>
     <input type="password" class="form-control" name="password" placeholder="Password" required>
 
     <button type="submit" class="btn btn-primary">SIGN IN</button>
-</form>
     </form>
   </div>
 </body>
