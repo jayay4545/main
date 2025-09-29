@@ -3,52 +3,37 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\AuthController;
 
-Route::get('/', function () {
-    return view('welcome'); // show login first
+// Authentication routes
+Route::get('/', [AuthController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('/check-auth', [AuthController::class, 'checkAuth'])->name('check.auth');
+Route::get('/login-data', [AuthController::class, 'getLoginData'])->name('login.data');
+
+// Protected routes (require authentication)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('home'); // loads resources/views/home.blade.php with Dashboard component
+    })->name('dashboard');
+
+    Route::get('/employee', function () {
+        return view('employee_page');
+    })->name('employee');
+
+    Route::get('/viewapproved', function () {
+        return view('viewapproved'); // loads resources/views/viewapproved.blade.php
+    })->name('viewapproved');
+
+    Route::get('/viewrequest', function () {
+        return view('viewrequest'); // loads resources/views/viewrequest.blade.php
+    })->name('viewrequest');
+
+    Route::get('/activitylogs', function () {
+        return view('activitylogs');
+    })->name('activitylogs');
 });
-
-Route::get('/dashboard', function () {
-    return view('home'); // loads resources/views/home.blade.php with Dashboard component
-})->name('dashboard');
-
-Route::get('/employee', function () {
-    return view('employee_page');
-})->name('employee');
-
-Route::get('/viewapproved', function () {
-    return view('viewapproved'); // loads resources/views/viewapproved.blade.php
-})->name('viewapproved');
-
-Route::get('/viewrequest', function () {
-    return view('viewrequest'); // loads resources/views/viewrequest.blade.php
-})->name('viewrequest');
-
-Route::get('/activitylogs', function () {
-    return view('activitylogs');
-})->name('activitylogs');
-
- 
-Route::post('/login', function () {
-    // Get credentials from request
-    $email = request('email');
-    $password = request('password');
-    
-    // Check if superadmin credentials
-    if ($email === 'superadmin@ireply.com' && $password === 'admin123') {
-        // Redirect superadmin to dashboard
-        return redirect()->route('dashboard');
-    }
-    
-    // Check if admin credentials
-    if ($email === 'admin@ireply.com' && $password === 'admin123') {
-        // Redirect to dashboard
-        return redirect()->route('dashboard');
-    }
-    
-    // For all other users, redirect to dashboard by default
-    return redirect()->route('dashboard');
-})->name('login');
 
 Route::get('/equipment', function () {
     return view('equipment');

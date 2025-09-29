@@ -47,3 +47,16 @@ Route::apiResource('/equipment', EquipmentController::class);
 // Category API routes
 use App\Http\Controllers\Api\CategoryController;
 Route::apiResource('categories', CategoryController::class);
+
+// User management API routes
+use App\Http\Controllers\UserController;
+Route::apiResource('users', UserController::class);
+
+// Profile management API routes
+use App\Http\Controllers\ProfileController;
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::put('/profile', [ProfileController::class, 'update']);
+    Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar']);
+    Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
+});
