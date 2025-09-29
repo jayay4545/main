@@ -1,138 +1,112 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Plus, Edit, Trash2, MoreVertical, Save, ArrowRight } from "lucide-react";
 import HomeSidebar from "./HomeSidebar";
 import Taskbar from "./components/Taskbar.jsx";
+import { roleService, userService, apiUtils } from "./services/api";
 
 const RoleManagementPage = () => {
-  const [admins, setAdmins] = useState([
-    {
-      id: 1,
-      name: "France Magdalaro",
-      position: "HR Lead",
-      profileImage: "/images/profile1.jpg",
-      accessTools: {
-        dashboard: true,
-        viewRequest: true,
-        viewApprove: true,
-        equipment: true,
-        reports: true,
-        controlPanel: true
-      }
-    },
-    {
-      id: 2,
-      name: "Arvin Managaytay",
-      position: "IT ADMIN",
-      profileImage: "/images/profile2.jpg",
-      accessTools: {
-        dashboard: true,
-        viewRequest: true,
-        viewApprove: true,
-        equipment: true,
-        reports: true,
-        controlPanel: true
-      }
-    },
-    {
-      id: 3,
-      name: "Earl Dela Cruz",
-      position: "NOC Lead",
-      profileImage: "/images/profile3.jpg",
-      accessTools: {
-        dashboard: true,
-        viewRequest: true,
-        viewApprove: true,
-        equipment: true,
-        reports: true,
-        controlPanel: true
-      }
-    },
-    {
-      id: 4,
-      name: "John Paul Francisco",
-      position: "IT ADMIN",
-      profileImage: "/images/profile4.jpg",
-      accessTools: {
-        dashboard: true,
-        viewRequest: true,
-        viewApprove: true,
-        equipment: true,
-        reports: true,
-        controlPanel: true
-      }
-    },
-    {
-      id: 5,
-      name: "Berly Basiosa",
-      position: "IT ADMIN",
-      profileImage: "/images/profile5.jpg",
-      accessTools: {
-        dashboard: true,
-        viewRequest: true,
-        viewApprove: true,
-        equipment: true,
-        reports: true,
-        controlPanel: true
-      }
-    }
-  ]);
+  const [admins, setAdmins] = useState([]);
 
-  const [selectedAdmin, setSelectedAdmin] = useState(admins[0]);
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
-  const [newRole, setNewRole] = useState({ name: "", description: "" });
+  const [newRole, setNewRole] = useState({ name: "", display_name: "", description: "" });
 
-  const handleAddRole = () => {
-    if (newRole.name && newRole.description) {
-      const admin = {
-        id: admins.length + 1,
-        name: newRole.name,
-        position: newRole.description,
-        profileImage: "/images/default-profile.jpg",
-        accessTools: {
-          dashboard: true,
-          viewRequest: true,
-          viewApprove: true,
-          equipment: true,
-          reports: true,
-          controlPanel: true
-        }
-      };
-      setAdmins([...admins, admin]);
-      setNewRole({ name: "", description: "" });
-      setShowAddModal(false);
-    }
+  const permissionKeys = [
+    { key: 'dashboard', label: 'Dashboard' },
+    { key: 'viewRequest', label: 'View Request', api: 'view_request' },
+    { key: 'viewApprove', label: 'View Approve', api: 'view_approve' },
+    { key: 'equipment', label: 'Equipment' },
+    { key: 'reports', label: 'Reports' },
+    { key: 'controlPanel', label: 'Control Panel', api: 'control_panel' },
+  ];
+
+  const mapUserToAdmin = (user) => {
+    const role = user.role || {};
+    const permissions = role.permissions || [];
+    const accessTools = {
+      dashboard: permissions.includes('dashboard'),
+      viewRequest: permissions.includes('view_request'),
+      viewApprove: permissions.includes('view_approve'),
+      equipment: permissions.includes('equipment'),
+      reports: permissions.includes('reports'),
+      controlPanel: permissions.includes('control_panel'),
+    };
+    return {
+      id: user.id,
+      name: user.name,
+      // In Admin list, always reflect the role title first
+      position: role.display_name || user.position || '',
+      profileImage: null,
+      accessTools,
+      _user: user,
+      _role: role,
+    };
   };
 
-  const handleEditRole = () => {
-    if (selectedRole && newRole.name && newRole.description) {
-      setAdmins(admins.map(admin => 
-        admin.id === selectedRole.id 
-          ? { ...admin, name: newRole.name, position: newRole.description }
-          : admin
-      ));
-      setSelectedRole(null);
-      setNewRole({ name: "", description: "" });
-      setShowEditModal(false);
-    }
-  };
-
-  const handleDeleteRole = () => {
-    if (selectedRole) {
-      setAdmins(admins.filter(admin => admin.id !== selectedRole.id));
-      if (selectedAdmin.id === selectedRole.id) {
-        setSelectedAdmin(admins[0]);
+  useEffect(() => {
+    const load = async () => {
+      // Client guard: only super_admin may access
+      const user = apiUtils.getCurrentUser();
+      if (user?.role?.name !== 'super_admin') {
+        window.location.href = '/';
+        return;
       }
-      setSelectedRole(null);
-      setShowDeleteModal(false);
+      const res = await userService.getAll();
+      const adminsData = res?.data?.admins || [];
+      const items = adminsData.map(mapUserToAdmin);
+      setAdmins(items);
+      setSelectedAdmin(items[0] || null);
+    };
+    load();
+  }, []);
+
+  const handleAddRole = async () => {
+    if (!newRole.name || !newRole.display_name) return;
+    const res = await roleService.create({
+      name: newRole.name,
+      display_name: newRole.display_name,
+      description: newRole.description,
+      permissions: [],
+    });
+    const created = mapRoleToAdmin(res.data);
+    setAdmins([...admins, created]);
+    setNewRole({ name: "", display_name: "", description: "" });
+    setShowAddModal(false);
+  };
+
+  const handleEditRole = async () => {
+    if (!selectedRole) return;
+    const res = await roleService.update(selectedRole.id, {
+      name: newRole.name,
+      display_name: newRole.display_name,
+      description: newRole.description,
+    });
+    const updated = mapRoleToAdmin(res.data);
+    setAdmins(admins.map(a => a.id === updated.id ? updated : a));
+    if (selectedAdmin?.id === updated.id) setSelectedAdmin(updated);
+    setSelectedRole(null);
+    setNewRole({ name: "", display_name: "", description: "" });
+    setShowEditModal(false);
+  };
+
+  const handleDeleteRole = async () => {
+    if (!selectedRole) return;
+    await roleService.delete(selectedRole.id);
+    const filtered = admins.filter(admin => admin.id !== selectedRole.id);
+    setAdmins(filtered);
+    if (selectedAdmin?.id === selectedRole.id) {
+      setSelectedAdmin(filtered[0] || null);
     }
+    setSelectedRole(null);
+    setShowDeleteModal(false);
   };
 
   const openEditModal = (admin) => {
     setSelectedRole(admin);
-    setNewRole({ name: admin.name, description: admin.position });
+    setNewRole({ name: admin._raw?.name || '', display_name: admin.name, description: admin.position });
     setShowEditModal(true);
   };
 
@@ -151,10 +125,22 @@ const RoleManagementPage = () => {
     });
   };
 
-  const handleSaveAccessTools = () => {
-    setAdmins(admins.map(admin => 
-      admin.id === selectedAdmin.id ? selectedAdmin : admin
-    ));
+  const handleSaveAccessTools = async () => {
+    if (!selectedAdmin) return;
+    const permissions = [];
+    if (selectedAdmin.accessTools.dashboard) permissions.push('dashboard');
+    if (selectedAdmin.accessTools.viewRequest) permissions.push('view_request');
+    if (selectedAdmin.accessTools.viewApprove) permissions.push('view_approve');
+    if (selectedAdmin.accessTools.equipment) permissions.push('equipment');
+    if (selectedAdmin.accessTools.reports) permissions.push('reports');
+    if (selectedAdmin.accessTools.controlPanel) permissions.push('control_panel');
+    const roleId = selectedAdmin._role?.id;
+    if (!roleId) return;
+    const res = await roleService.setPermissions(roleId, permissions);
+    const updatedRole = res.data;
+    const updatedAdmin = mapUserToAdmin({ ...selectedAdmin._user, role: updatedRole });
+    setAdmins(admins.map(a => a.id === updatedAdmin.id ? updatedAdmin : a));
+    setSelectedAdmin(updatedAdmin);
   };
 
   return (
@@ -205,24 +191,24 @@ const RoleManagementPage = () => {
           <div className="bg-white rounded-xl shadow p-6 border border-gray-200">
             {/* Profile Section */}
             <div className="text-center mb-6">
-              {selectedAdmin.profileImage ? (
+              {selectedAdmin?.profileImage ? (
                 <img src={selectedAdmin.profileImage} alt={selectedAdmin.name} className="w-20 h-20 rounded-full mx-auto mb-3 object-cover" />
               ) : (
                 <div className="w-20 h-20 bg-gray-300 rounded-full mx-auto mb-3 flex items-center justify-center">
                   <span className="text-2xl font-bold text-gray-600">
-                    {selectedAdmin.name.split(' ').map(n => n[0]).join('')}
+                    {selectedAdmin?.name ? selectedAdmin.name.split(' ').map(n => n[0]).join('') : ''}
                   </span>
                 </div>
               )}
-              <h3 className="text-lg font-bold text-gray-900">{selectedAdmin.name}</h3>
-              <p className="text-gray-500">{selectedAdmin.position}</p>
+              <h3 className="text-lg font-bold text-gray-900">{selectedAdmin?.name || ''}</h3>
+              <p className="text-gray-500">{selectedAdmin?.position || ''}</p>
             </div>
             
             {/* Access Tools Section */}
             <div className="mb-6">
               <h4 className="text-sm font-medium text-gray-900 mb-4">Access tools</h4>
               <div className="space-y-3">
-                {Object.entries(selectedAdmin.accessTools).map(([tool, enabled]) => (
+                {selectedAdmin && Object.entries(selectedAdmin.accessTools).map(([tool, enabled]) => (
                   <div key={tool} className="flex items-center justify-between">
                     <span className="text-sm text-gray-700 capitalize">
                       {tool.replace(/([A-Z])/g, ' $1').trim()}

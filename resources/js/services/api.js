@@ -29,10 +29,10 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
+      // Session/token invalid: send to root (our login route is GET /)
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     return Promise.reject(error);
   }
@@ -221,6 +221,40 @@ export const userService = {
 
   delete: async (id) => {
     const response = await api.delete(`/users/${id}`);
+    return response.data;
+  },
+};
+
+// Role Services
+export const roleService = {
+  getAll: async () => {
+    // Use session-authenticated web routes (no /api prefix)
+    const response = await axios.get('/roles', { withCredentials: true });
+    return response.data;
+  },
+
+  getById: async (id) => {
+    const response = await axios.get(`/roles/${id}`, { withCredentials: true });
+    return response.data;
+  },
+
+  create: async (roleData) => {
+    const response = await axios.post('/roles', roleData, { withCredentials: true });
+    return response.data;
+  },
+
+  update: async (id, roleData) => {
+    const response = await axios.put(`/roles/${id}`, roleData, { withCredentials: true });
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await axios.delete(`/roles/${id}`, { withCredentials: true });
+    return response.data;
+  },
+
+  setPermissions: async (id, permissions) => {
+    const response = await axios.post(`/roles/${id}/permissions`, { permissions }, { withCredentials: true });
     return response.data;
   },
 };

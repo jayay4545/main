@@ -60,3 +60,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar']);
     Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
 });
+
+// Role management API routes
+// Role management routes moved to web.php to use session auth

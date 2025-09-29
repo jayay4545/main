@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Api\RoleController;
 
 // Authentication routes
 Route::get('/', [AuthController::class, 'showLoginForm'])->name('login');
@@ -33,6 +34,21 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/activitylogs', function () {
         return view('activitylogs');
     })->name('activitylogs');
+
+    // Role management page
+    Route::get('/role-management', function () {
+        return view('role-management');
+    })->name('role-management');
+
+    // Role management API (session auth + role check)
+    Route::middleware(['role:super_admin'])->group(function () {
+        Route::get('/roles', [RoleController::class, 'index']);
+        Route::post('/roles', [RoleController::class, 'store']);
+        Route::get('/roles/{id}', [RoleController::class, 'show']);
+        Route::put('/roles/{id}', [RoleController::class, 'update']);
+        Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
+        Route::post('/roles/{id}/permissions', [RoleController::class, 'setPermissions']);
+    });
 });
 
 Route::get('/equipment', function () {
@@ -47,9 +63,6 @@ Route::get('/additems', function () {
     return view('addstocks');
 })->name('additems');
 
-Route::get('/role-management', function () {
-    return view('role-management');
-})->name('role-management');
 
 Route::get('/users', function () {
     return view('users');

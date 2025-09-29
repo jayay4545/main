@@ -9,6 +9,8 @@ import {
   Settings,
   Clock,
 } from "lucide-react";
+import { apiUtils } from "./services/api";
+import { useEffect } from "react";
 
 const HomeSidebar = ({ onSelect }) => {
   const [openTransaction, setOpenTransaction] = useState(true);
@@ -59,6 +61,51 @@ const HomeSidebar = ({ onSelect }) => {
       ? "bg-white text-[#2262C6] shadow-sm scale-105"
       : "text-white hover:bg-white hover:text-[#2262C6] hover:shadow-sm"
   }`;
+
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    const computeIsSuperAdmin = (user) => {
+      if (!user) return false;
+      // Role can be a string or object; permissions may be array or JSON string
+      const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
+      let permissions = undefined;
+      if (typeof user.role === 'object' && user.role) {
+        permissions = Array.isArray(user.role.permissions)
+          ? user.role.permissions
+          : (typeof user.role.permissions === 'string'
+              ? (() => { try { return JSON.parse(user.role.permissions); } catch { return undefined; } })()
+              : undefined);
+      }
+      return roleName === 'super_admin' || (Array.isArray(permissions) && permissions.includes('*'));
+    };
+
+    const localUser = apiUtils.getCurrentUser();
+    if (localUser) {
+      const isSA = computeIsSuperAdmin(localUser);
+      try { console.debug('[Sidebar] local role:', (typeof localUser.role === 'string' ? localUser.role : localUser.role?.name), 'isSuperAdmin:', isSA); } catch (e) {}
+      setIsSuperAdmin(isSA);
+      if (isSA !== false) return;
+    }
+
+    // Fallback to session-based auth endpoint
+    fetch('/check-auth', { credentials: 'include' })
+      .then((r) => (r && r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.authenticated && data.user) {
+          // Normalize to match apiUtils expectations
+          const normalized = {
+            ...data.user,
+            role: { name: data.user.role, display_name: data.user.role_display },
+          };
+          localStorage.setItem('user', JSON.stringify(normalized));
+          const isSA = computeIsSuperAdmin(normalized);
+          try { console.debug('[Sidebar] fetched role:', normalized.role?.name, 'isSuperAdmin:', isSA); } catch (e) {}
+          setIsSuperAdmin(isSA);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="flex flex-col">
@@ -182,10 +229,12 @@ const HomeSidebar = ({ onSelect }) => {
             <span>Reports</span>
           </a>
 
-          <a href="/role-management" className={linkClass("/role-management")} onClick={(e) => handleMenuClick("/role-management", e)}>
-            <Users className="h-5 w-5" />
-            <span>Role Management</span>
-          </a>
+          {isSuperAdmin && (
+            <a href="/role-management" className={linkClass("/role-management")} onClick={(e) => handleMenuClick("/role-management", e)}>
+              <Users className="h-5 w-5" />
+              <span>Role Management</span>
+            </a>
+          )}
 
           <a href="/control-panel" className={linkClass("/control-panel")} onClick={(e) => handleMenuClick("/control-panel", e)}>
             <Settings className="h-5 w-5" />
