@@ -33,10 +33,6 @@ class Role extends Model
     }
 
     // Accessors & Mutators
-    public function getIsActiveAttribute()
-    {
-        return $this->is_active;
-    }
 
     public function hasPermission($permission)
     {

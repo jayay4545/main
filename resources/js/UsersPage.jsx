@@ -5,40 +5,10 @@ import HomeSidebar from "./HomeSidebar";
 const UsersPage = () => {
   console.log('UsersPage component is rendering');
   
-  const [admins, setAdmins] = useState([
-    {
-      id: 1,
-      name: "France Magdalaro",
-      username: "France30",
-      email: "Superadmin@hris.com",
-      accountType: "IT admin"
-    },
-    {
-      id: 2,
-      name: "France Magdalaro",
-      username: "France30",
-      email: "Superadmin@hris.com",
-      accountType: "IT admin"
-    },
-    {
-      id: 3,
-      name: "France Magdalaro",
-      username: "France30",
-      email: "Superadmin@hris.com",
-      accountType: "IT admin"
-    },
-    {
-      id: 4,
-      name: "France Magdalaro",
-      username: "France30",
-      email: "Superadmin@hris.com",
-      accountType: "IT admin"
-    }
-  ]);
-
+  const [admins, setAdmins] = useState([]);
   const [employees, setEmployees] = useState([]);
-  const [loadingEmployees, setLoadingEmployees] = useState(false);
-  const [employeesError, setEmployeesError] = useState("");
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [usersError, setUsersError] = useState("");
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -54,62 +24,95 @@ const UsersPage = () => {
     accountType: "Employee" 
   });
 
-  // Load employees from API
+  // Load users from API
   useEffect(() => {
-    const fetchEmployees = async () => {
+    const fetchUsers = async () => {
       try {
-        setLoadingEmployees(true);
-        setEmployeesError("");
-        const res = await fetch('/api/employees');
+        setLoadingUsers(true);
+        setUsersError("");
+        const res = await fetch('/api/users');
         const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          const mapped = json.data.map(e => ({
-            id: e.id,
-            name: `${e.first_name} ${e.last_name}`.trim(),
-            username: e.employee_id || (e.email ? e.email.split('@')[0] : ''),
-            email: e.email,
-            accountType: 'Employee',
-            // Keep raw fields for update
-            firstName: e.first_name,
-            lastName: e.last_name,
-            position: e.position,
-            department: e.department,
-            phone: e.phone,
-            status: e.status,
-            hireDate: e.hire_date
+        if (json.success && json.data) {
+          // Map admin users
+          const adminUsers = json.data.admins.map(user => ({
+            id: user.id,
+            name: user.name,
+            username: user.employee_id || user.email.split('@')[0],
+            email: user.email,
+            accountType: user.role ? user.role.display_name : 'Admin',
+            role: user.role,
+            position: user.position,
+            department: user.department,
+            phone: user.phone,
+            is_active: user.is_active
           }));
-          setEmployees(mapped);
+          
+          // Map employee users
+          const employeeUsers = json.data.employees.map(user => ({
+            id: user.id,
+            name: user.name,
+            username: user.employee_id || user.email.split('@')[0],
+            email: user.email,
+            accountType: user.role ? user.role.display_name : 'Employee',
+            role: user.role,
+            position: user.position,
+            department: user.department,
+            phone: user.phone,
+            is_active: user.is_active
+          }));
+          
+          setAdmins(adminUsers);
+          setEmployees(employeeUsers);
         } else {
-          setEmployeesError(json.message || 'Failed to load employees');
+          setUsersError(json.message || 'Failed to load users');
         }
       } catch (err) {
-        setEmployeesError(err?.message || 'Failed to load employees');
+        setUsersError(err?.message || 'Failed to load users');
       } finally {
-        setLoadingEmployees(false);
+        setLoadingUsers(false);
       }
     };
-    fetchEmployees();
+    fetchUsers();
   }, []);
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     if (newUser.name && newUser.username && newUser.email && newUser.password && newUser.confirmPassword) {
       if (newUser.password !== newUser.confirmPassword) {
         alert("Passwords do not match!");
         return;
       }
       
-      const user = {
-        id: Math.max(...admins.map(a => a.id), ...employees.map(e => e.id)) + 1,
-        name: newUser.name,
-        username: newUser.username,
-        email: newUser.email,
-        accountType: newUser.accountType
-      };
-      
-      if (newUser.accountType === "IT admin") {
-        setAdmins([...admins, user]);
-      } else {
-        setEmployees([...employees, user]);
+      try {
+        const response = await fetch('/api/users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+          },
+          body: JSON.stringify({
+            name: newUser.name,
+            email: newUser.email,
+            password: newUser.password,
+            accountType: newUser.accountType === "IT admin" ? "admin" : "employee",
+            username: newUser.username,
+            position: "Employee",
+            department: null,
+            phone: null,
+          }),
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          // Reload users to get updated data
+          window.location.reload();
+        } else {
+          alert(result.message || 'Failed to create user');
+        }
+      } catch (error) {
+        console.error('Error creating user:', error);
+        alert('Failed to create user. Please try again.');
       }
       
       setNewUser({ name: "", username: "", email: "", password: "", confirmPassword: "", accountType: "Employee" });
@@ -119,43 +122,37 @@ const UsersPage = () => {
 
   const handleEditUser = async () => {
     if (selectedUser && newUser.name && newUser.username && newUser.email) {
-      const updatedUser = {
-        ...selectedUser,
-        name: newUser.name,
-        username: newUser.username,
-        email: newUser.email,
-        accountType: newUser.accountType
-      };
-      if (selectedUser.accountType === "IT admin") {
-        setAdmins(admins.map(admin => 
-          admin.id === selectedUser.id ? updatedUser : admin
-        ));
-      } else {
-        // Persist to backend
-        try {
-          const [firstName, ...rest] = newUser.name.split(' ');
-          const lastName = rest.join(' ') || selectedUser.lastName || '';
-          const payload = {
-            first_name: firstName || selectedUser.firstName || '',
-            last_name: lastName || selectedUser.lastName || '',
+      try {
+        const response = await fetch(`/api/users/${selectedUser.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+          },
+          body: JSON.stringify({
+            name: newUser.name,
             email: newUser.email,
-            position: selectedUser.position || 'Employee',
+            password: newUser.password || null,
+            accountType: newUser.accountType === "IT admin" ? "admin" : "employee",
+            username: newUser.username,
+            position: selectedUser.position || "Employee",
             department: selectedUser.department || null,
             phone: selectedUser.phone || null,
-            status: selectedUser.status || 'active',
-            hire_date: selectedUser.hireDate || null
-          };
-          await fetch(`/api/employees/${selectedUser.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-        } catch (e) {
-          console.error('Failed to update employee', e);
+          }),
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          // Reload users to get updated data
+          window.location.reload();
+        } else {
+          alert(result.message || 'Failed to update user');
         }
-        setEmployees(employees.map(employee => 
-          employee.id === selectedUser.id ? updatedUser : employee
-        ));
+      } catch (error) {
+        console.error('Error updating user:', error);
+        alert('Failed to update user. Please try again.');
       }
       
       setSelectedUser(null);
@@ -166,16 +163,28 @@ const UsersPage = () => {
 
   const handleDeleteUser = async () => {
     if (selectedUser) {
-      if (selectedUser.accountType === "IT admin") {
-        setAdmins(admins.filter(admin => admin.id !== selectedUser.id));
-      } else {
-        try {
-          await fetch(`/api/employees/${selectedUser.id}`, { method: 'DELETE', headers: { 'Accept': 'application/json' } });
-        } catch (e) {
-          console.error('Failed to delete employee', e);
+      try {
+        const response = await fetch(`/api/users/${selectedUser.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+          },
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          // Reload users to get updated data
+          window.location.reload();
+        } else {
+          alert(result.message || 'Failed to delete user');
         }
-        setEmployees(employees.filter(employee => employee.id !== selectedUser.id));
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        alert('Failed to delete user. Please try again.');
       }
+      
       setSelectedUser(null);
       setShowDeleteModal(false);
     }
@@ -340,14 +349,14 @@ const UsersPage = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {loadingEmployees && (
+                  {loadingUsers && (
                     <tr>
                       <td colSpan="5" className="px-6 py-4 text-sm text-gray-500">Loading...</td>
                     </tr>
                   )}
-                  {employeesError && !loadingEmployees && (
+                  {usersError && !loadingUsers && (
                     <tr>
-                      <td colSpan="5" className="px-6 py-4 text-sm text-red-600">{employeesError}</td>
+                      <td colSpan="5" className="px-6 py-4 text-sm text-red-600">{usersError}</td>
                     </tr>
                   )}
                   {employees.map((employee) => (
@@ -468,13 +477,14 @@ const UsersPage = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Account type
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={newUser.accountType}
                       onChange={(e) => setNewUser({ ...newUser, accountType: e.target.value })}
                       className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="NOC tier 1*"
-                    />
+                    >
+                      <option value="Employee">Employee</option>
+                      <option value="IT admin">IT Admin</option>
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -595,13 +605,14 @@ const UsersPage = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Account type
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={newUser.accountType}
                       onChange={(e) => setNewUser({ ...newUser, accountType: e.target.value })}
                       className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="NOC tier 1*"
-                    />
+                    >
+                      <option value="Employee">Employee</option>
+                      <option value="IT admin">IT Admin</option>
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">

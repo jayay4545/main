@@ -91,10 +91,6 @@ class User extends Authenticatable
     }
 
     // Accessors & Mutators
-    public function getIsActiveAttribute()
-    {
-        return $this->is_active;
-    }
 
     public function hasRole($roleName)
     {
