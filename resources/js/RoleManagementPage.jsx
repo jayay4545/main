@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, MoreVertical, Save, ArrowRight } from "lucide-react";
+import { Plus, Edit, Trash2, MoreVertical, Save, ArrowRight, Check } from "lucide-react";
 import HomeSidebar from "./HomeSidebar";
 import GlobalHeader from "./components/GlobalHeader";
 import { roleService, userService, apiUtils } from "./services/api";
@@ -13,27 +13,37 @@ const RoleManagementPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
   const [newRole, setNewRole] = useState({ name: "", display_name: "", description: "" });
+  const [overlay, setOverlay] = useState({ visible: false, status: 'idle', message: '' });
 
+  // This list controls which items appear in the checkbox list and how they map to backend permission strings
   const permissionKeys = [
-    { key: 'dashboard', label: 'Dashboard' },
-    { key: 'viewRequest', label: 'View Request', api: 'view_request' },
-    { key: 'viewApprove', label: 'View Approve', api: 'view_approve' },
-    { key: 'equipment', label: 'Equipment' },
-    { key: 'reports', label: 'Reports' },
+    { key: 'dashboard', label: 'Home', api: 'dashboard' },
+    { key: 'viewRequest', label: 'Transaction • View Request', api: 'view_request' },
+    { key: 'viewApprove', label: 'Transaction • View Approved', api: 'view_approve' },
+    { key: 'inventory', label: 'Equipment • Inventory', api: 'equipment_inventory' },
+    { key: 'addStocks', label: 'Equipment • Add Stocks', api: 'add_stocks' },
+    { key: 'employee', label: 'Employee', api: 'employee' },
+    { key: 'reports', label: 'Reports', api: 'reports' },
     { key: 'controlPanel', label: 'Control Panel', api: 'control_panel' },
+    { key: 'activityLogs', label: 'Activity Logs', api: 'activity_logs' },
+    { key: 'users', label: 'Users', api: 'users' },
   ];
+
+  const buildAccessToolsFromPermissions = (permissionsArray) => {
+    const normalized = Array.isArray(permissionsArray)
+      ? permissionsArray
+      : (typeof permissionsArray === 'string' ? (() => { try { return JSON.parse(permissionsArray); } catch { return []; } })() : []);
+    const access = {};
+    for (const item of permissionKeys) {
+      access[item.key] = normalized.includes(item.api || item.key);
+    }
+    return access;
+  };
 
   const mapUserToAdmin = (user) => {
     const role = user.role || {};
     const permissions = role.permissions || [];
-    const accessTools = {
-      dashboard: permissions.includes('dashboard'),
-      viewRequest: permissions.includes('view_request'),
-      viewApprove: permissions.includes('view_approve'),
-      equipment: permissions.includes('equipment'),
-      reports: permissions.includes('reports'),
-      controlPanel: permissions.includes('control_panel'),
-    };
+    const accessTools = buildAccessToolsFromPermissions(permissions);
     return {
       id: user.id,
       name: user.name,
@@ -152,13 +162,13 @@ const RoleManagementPage = () => {
 
   const handleSaveAccessTools = async () => {
     if (!selectedAdmin) return;
+    setOverlay({ visible: true, status: 'saving', message: 'Saving changes...' });
     const permissions = [];
-    if (selectedAdmin.accessTools.dashboard) permissions.push('dashboard');
-    if (selectedAdmin.accessTools.viewRequest) permissions.push('view_request');
-    if (selectedAdmin.accessTools.viewApprove) permissions.push('view_approve');
-    if (selectedAdmin.accessTools.equipment) permissions.push('equipment');
-    if (selectedAdmin.accessTools.reports) permissions.push('reports');
-    if (selectedAdmin.accessTools.controlPanel) permissions.push('control_panel');
+    for (const item of permissionKeys) {
+      if (selectedAdmin.accessTools[item.key]) {
+        permissions.push(item.api || item.key);
+      }
+    }
     const roleId = selectedAdmin._role?.id;
     if (!roleId) return;
     const res = await roleService.setPermissions(roleId, permissions);
@@ -166,6 +176,31 @@ const RoleManagementPage = () => {
     const updatedAdmin = mapUserToAdmin({ ...selectedAdmin._user, role: updatedRole });
     setAdmins(admins.map(a => a.id === updatedAdmin.id ? updatedAdmin : a));
     setSelectedAdmin(updatedAdmin);
+
+    // If we just changed the role of the CURRENT logged-in user, refresh local user so sidebar updates
+    try {
+      const current = apiUtils.getCurrentUser();
+      const currentRoleName = typeof current?.role === 'string' ? current.role : current?.role?.name;
+      const changedRoleName = updatedAdmin?._role?.name;
+      if (current && changedRoleName && currentRoleName === changedRoleName) {
+        const resAuth = await fetch('/check-auth', { credentials: 'include' });
+        if (resAuth.ok) {
+          const data = await resAuth.json();
+          if (data?.authenticated && data.user) {
+            const normalized = {
+              ...data.user,
+              role: { name: data.user.role, display_name: data.user.role_display, permissions: data.user.permissions }
+            };
+            localStorage.setItem('user', JSON.stringify(normalized));
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to refresh current user after permission save:', e);
+    }
+    // Show centered success and auto-hide
+    setOverlay({ visible: true, status: 'success', message: 'Changes updated' });
+    setTimeout(() => setOverlay({ visible: false, status: 'idle', message: '' }), 1500);
   };
 
   return (
@@ -233,15 +268,15 @@ const RoleManagementPage = () => {
             <div className="mb-6">
               <h4 className="text-sm font-medium text-gray-900 mb-4">Access tools</h4>
               <div className="space-y-3">
-                {selectedAdmin && Object.entries(selectedAdmin.accessTools).map(([tool, enabled]) => (
-                  <div key={tool} className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700 capitalize">
-                      {tool.replace(/([A-Z])/g, ' $1').trim()}
+                {selectedAdmin && permissionKeys.map((item) => (
+                  <div key={item.key} className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">
+                      {item.label}
                     </span>
                     <input
                       type="checkbox"
-                      checked={enabled}
-                      onChange={() => handleAccessToolChange(tool)}
+                      checked={!!selectedAdmin.accessTools?.[item.key]}
+                      onChange={() => handleAccessToolChange(item.key)}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                   </div>
@@ -252,7 +287,8 @@ const RoleManagementPage = () => {
             {/* Save Button */}
             <button
               onClick={handleSaveAccessTools}
-              className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60"
+              disabled={overlay.visible && overlay.status === 'saving'}
             >
               <Save className="h-4 w-4 mr-2" />
               Save
@@ -341,6 +377,20 @@ const RoleManagementPage = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen loading/success overlay */}
+      {overlay.visible && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl px-8 py-6 flex items-center gap-3">
+            {overlay.status === 'saving' ? (
+              <div className="h-6 w-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
+            ) : (
+              <div className="text-green-600"><Check className="h-6 w-6" /></div>
+            )}
+            <span className="text-base font-semibold text-gray-800">{overlay.message}</span>
           </div>
         </div>
       )}

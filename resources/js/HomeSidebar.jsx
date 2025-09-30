@@ -63,21 +63,26 @@ const HomeSidebar = ({ onSelect }) => {
   }`;
 
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [permissions, setPermissions] = useState([]);
 
   useEffect(() => {
+    const normalizePermissions = (user) => {
+      if (!user) return [];
+      if (typeof user.role === 'object' && user.role) {
+        if (Array.isArray(user.role.permissions)) return user.role.permissions;
+        if (typeof user.role.permissions === 'string') {
+          try { return JSON.parse(user.role.permissions); } catch { return []; }
+        }
+      }
+      return [];
+    };
+
     const computeIsSuperAdmin = (user) => {
       if (!user) return false;
       // Role can be a string or object; permissions may be array or JSON string
       const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
-      let permissions = undefined;
-      if (typeof user.role === 'object' && user.role) {
-        permissions = Array.isArray(user.role.permissions)
-          ? user.role.permissions
-          : (typeof user.role.permissions === 'string'
-              ? (() => { try { return JSON.parse(user.role.permissions); } catch { return undefined; } })()
-              : undefined);
-      }
-      return roleName === 'super_admin' || (Array.isArray(permissions) && permissions.includes('*'));
+      const perms = normalizePermissions(user);
+      return roleName === 'super_admin' || (Array.isArray(perms) && perms.includes('*'));
     };
 
     const checkUserRole = async () => {
@@ -87,6 +92,7 @@ const HomeSidebar = ({ onSelect }) => {
         const isSA = computeIsSuperAdmin(localUser);
         console.debug('[Sidebar] local role:', (typeof localUser.role === 'string' ? localUser.role : localUser.role?.name), 'isSuperAdmin:', isSA);
         setIsSuperAdmin(isSA);
+        setPermissions(normalizePermissions(localUser));
         return;
       }
 
@@ -99,26 +105,36 @@ const HomeSidebar = ({ onSelect }) => {
             // Normalize to match apiUtils expectations
             const normalized = {
               ...data.user,
-              role: { name: data.user.role, display_name: data.user.role_display },
+              role: { name: data.user.role, display_name: data.user.role_display, permissions: data.user.permissions },
             };
             localStorage.setItem('user', JSON.stringify(normalized));
             const isSA = computeIsSuperAdmin(normalized);
             console.debug('[Sidebar] fetched role:', normalized.role?.name, 'isSuperAdmin:', isSA);
             setIsSuperAdmin(isSA);
+            setPermissions(normalizePermissions(normalized));
           } else {
             setIsSuperAdmin(false);
+            setPermissions([]);
           }
         } else {
           setIsSuperAdmin(false);
+          setPermissions([]);
         }
       } catch (error) {
         console.error('Error checking user role:', error);
         setIsSuperAdmin(false);
+        setPermissions([]);
       }
     };
 
     checkUserRole();
   }, []);
+
+  const can = (perm) => {
+    if (isSuperAdmin) return true;
+    if (!perm) return false;
+    return Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm));
+  };
 
   return (
     <div className="flex flex-col">
@@ -136,12 +152,16 @@ const HomeSidebar = ({ onSelect }) => {
         {/* Navigation */}
         <nav className="flex-1 min-h-0 px-3 py-4 mt-4 space-y-2 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {/* Home */}
+          {can('dashboard') && (
           <a href="/dashboard" className={linkClass("/dashboard")} onClick={(e) => handleMenuClick("/dashboard", e)}>
             <Eye className="h-5 w-5" />
             <span>Home</span>
           </a>
+          )}
 
           {/* Transaction */}
+          {(can('view_request') || can('view_approve')) && (
+            <>
           <button
             className={sectionButtonClass(
               isActive("/viewrequest") || isActive("/viewapproved")
@@ -159,6 +179,7 @@ const HomeSidebar = ({ onSelect }) => {
           </button>
           {openTransaction && (
             <ul className="ml-6 mt-1 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                  {can('view_request') && (
               <li>
                 <a
                   href="/viewrequest"
@@ -171,6 +192,8 @@ const HomeSidebar = ({ onSelect }) => {
                   View Request
                 </a>
               </li>
+                  )}
+                  {can('view_approve') && (
               <li>
                 <a
                   href="/viewapproved"
@@ -183,10 +206,15 @@ const HomeSidebar = ({ onSelect }) => {
                   View Approved
                 </a>
               </li>
+                  )}
             </ul>
+              )}
+            </>
           )}
 
           {/* Equipment */}
+          {(can('equipment_inventory') || can('add_stocks')) && (
+            <>
           <button
             className={sectionButtonClass(
               isActive("/equipment") || isActive("/addstocks")
@@ -204,6 +232,7 @@ const HomeSidebar = ({ onSelect }) => {
           </button>
           {openEquipment && (
             <ul className="ml-6 mt-1 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                  {can('equipment_inventory') && (
               <li>
                 <a
                   href="/equipment"
@@ -216,6 +245,8 @@ const HomeSidebar = ({ onSelect }) => {
                   Inventory
                 </a>
               </li>
+                  )}
+                  {can('add_stocks') && (
               <li>
                 <a
                   href="/addstocks"
@@ -228,19 +259,26 @@ const HomeSidebar = ({ onSelect }) => {
                   Add Stocks
                 </a>
               </li>
+                  )}
             </ul>
+              )}
+            </>
           )}
 
           {/* Other Menus */}
+          {can('employee') && (
           <a href="/employee" className={linkClass("/employee")} onClick={(e) => handleMenuClick("/employee", e)}>
             <User className="h-5 w-5" />
             <span>Employee</span>
           </a>
+          )}
 
+          {can('reports') && (
           <a href="/reports" className={linkClass("/reports")} onClick={(e) => handleMenuClick("/reports", e)}>
             <FileText className="h-5 w-5" />
             <span>Reports</span>
           </a>
+          )}
 
           {isSuperAdmin && (
             <a href="/role-management" className={linkClass("/role-management")} onClick={(e) => handleMenuClick("/role-management", e)}>
@@ -249,20 +287,26 @@ const HomeSidebar = ({ onSelect }) => {
             </a>
           )}
 
+          {can('control_panel') && (
           <a href="/control-panel" className={linkClass("/control-panel")} onClick={(e) => handleMenuClick("/control-panel", e)}>
             <Settings className="h-5 w-5" />
             <span>Control Panel</span>
           </a>
+          )}
 
+          {can('activity_logs') && (
           <a href="/activitylogs" className={linkClass("/activitylogs")} onClick={(e) => handleMenuClick("/activitylogs", e)}>
             <Clock className="h-5 w-5" />
             <span>Activity Logs</span>
           </a>
+          )}
 
+          {can('users') && (
           <a href="/users" className={linkClass("/users")} onClick={(e) => handleMenuClick("/users", e)}>
             <User className="h-5 w-5" />
             <span>Users</span>
           </a>
+          )}
         </nav>
       </aside>
     </div>

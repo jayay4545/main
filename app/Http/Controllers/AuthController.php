@@ -92,6 +92,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'role' => $role ? $role->name : null,
                 'role_display' => $role ? $role->display_name : null,
+                'permissions' => $role ? $role->permissions : null,
                 'is_active' => $user->is_active
             ]]);
             
@@ -125,6 +126,7 @@ class AuthController extends Controller
                     'email' => $user->email,
                     'role' => $role ? $role->name : null,
                     'role_display' => $role ? $role->display_name : null,
+                    'permissions' => $role ? $role->permissions : null,
                     'is_active' => $user->is_active
                 ]
             ]);
@@ -148,6 +150,7 @@ class AuthController extends Controller
                     'email' => $user->email,
                     'role' => $role ? $role->name : null,
                     'role_display' => $role ? $role->display_name : null,
+                    'permissions' => $role ? $role->permissions : null,
                     'is_active' => $user->is_active
                 ],
                 'redirect' => route('dashboard')
