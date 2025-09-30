@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import HomeSidebar from './HomeSidebar';
+import GlobalHeader from './components/GlobalHeader';
 import { Eye, Pencil, Trash2, Search } from 'lucide-react';
 
 const getBadgeColor = (name) => {
@@ -176,26 +177,12 @@ const EmployeePage = () => {
       <HomeSidebar />
       
       <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="bg-white px-8 py-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold text-blue-600">Employees</h1>
-            <div className="flex items-center space-x-4">
-              <button className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-                <div className="w-4 h-4 bg-gray-400 rounded"></div>
-              </button>
-              <button className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-                <div className="w-4 h-4 bg-gray-400 rounded"></div>
-              </button>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">John F.</span>
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  J
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Global Header with Profile */}
+        <GlobalHeader 
+          title="Employees" 
+          hideSearch={true}
+          showTitle={true}
+        />
 
         {/* Search Bar and Add Button */}
         <div className="bg-white px-8 py-4 border-b border-gray-200">

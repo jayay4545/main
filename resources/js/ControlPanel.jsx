@@ -2,6 +2,7 @@ import React from "react";
 import FileUploadWidget from "./components/FileUploadWidget";
 import { Search, UserCog } from "lucide-react";
 import HomeSidebar from "./HomeSidebar";
+import GlobalHeader from "./components/GlobalHeader";
 
 const ControlPanel = () => {
   // Page-level data only (cards)
@@ -88,6 +89,7 @@ const ControlPanel = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
+        <GlobalHeader title="Control Panel" />
         {/* Header */}
         <header className="flex items-center justify-between px-10 py-6 bg-white border-b border-gray-100">
           {/* Search */}

@@ -16,26 +16,35 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         if (!auth()->check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated'
-            ], 401);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+            return redirect()->route('login');
         }
 
         $user = auth()->user();
         
         if (!$user->role) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User has no role assigned'
-            ], 403);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User has no role assigned'
+                ], 403);
+            }
+            return redirect()->route('dashboard')->with('error', 'User has no role assigned');
         }
 
         if (!in_array($user->role->name, $roles)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Insufficient permissions'
-            ], 403);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Insufficient permissions'
+                ], 403);
+            }
+            return redirect()->route('dashboard')->with('error', 'Insufficient permissions');
         }
 
         return $next($request);

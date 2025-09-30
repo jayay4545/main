@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Home, History, Users, BarChart3, Laptop, Mouse, Plus, Package } from 'lucide-react';
-import Taskbar from '../components/Taskbar.jsx';
+import GlobalHeader from '../components/GlobalHeader';
 
 const Employee = () => {
   const [activeMenu, setActiveMenu] = useState('Home');
@@ -145,7 +145,7 @@ const Employee = () => {
 
   {/* Main Section */}
   <div className="flex-1 flex flex-col">
-    <Taskbar title="Employee" />
+    <GlobalHeader title="Employee" />
 
         {/* Main Content */}
         <div className="flex-1 p-6 -ml-6 pl-12">

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Printer, Check, X, ChevronDown, Eye, Pencil } from 'lucide-react';
-import Taskbar from './components/Taskbar.jsx';
+import GlobalHeader from './components/GlobalHeader';
 import HomeSidebar from './HomeSidebar';
 import VerificationModal from './components/VerificationModal';
 import SimpleConfirmModal from './components/SimpleConfirmModal.jsx';
@@ -347,7 +347,7 @@ const ViewRequest = () => {
     <div className="h-screen overflow-hidden bg-white flex">
       <HomeSidebar />
     <div className="flex-1 flex flex-col">
-        <Taskbar title="Transaction" />
+        <GlobalHeader title="View Request" />
 
       <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">
         <div className="flex-1 min-h-0 overflow-y-auto">
