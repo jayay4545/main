@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import HomeSidebar from './HomeSidebar';
 import { Copy, Plus, Minus, X, ChevronRight } from 'lucide-react';
-import Taskbar from './components/Taskbar.jsx';
+import GlobalHeader from './components/GlobalHeader';
 
 const rows = [
   { id: 1, item: 'Lenovo', serial: '353454', date: 'Sept 05 2025', status: 'Available', price: '₱0.00' },
@@ -215,7 +215,7 @@ const AddStocks = () => {
         <HomeSidebar />
       </div>
       <div className="flex-1 flex flex-col">
-        <Taskbar title="Equipment" />
+        <GlobalHeader title="Add Stocks" />
 
         <main className="flex-1 px-10 py-6 overflow-y-auto">
           <h2 className="text-3xl font-bold text-blue-600">Equipment</h2>

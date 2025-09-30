@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import HomeSidebar from './HomeSidebar';
-import Taskbar from './components/Taskbar.jsx';
+import GlobalHeader from './components/GlobalHeader';
 import api from './services/api';
 
 const Card = ({ selected, name, qty, image, onClick }) => {
@@ -78,7 +78,7 @@ const Equipment = () => {
     <div className="h-screen overflow-hidden bg-white flex">
       <HomeSidebar />
       <div className="flex-1 flex flex-col">
-        <Taskbar title="John F." />
+        <GlobalHeader title="Equipment" />
         
         <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">
           <div className="flex-1 min-h-0 overflow-y-auto">

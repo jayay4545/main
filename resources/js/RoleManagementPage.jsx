@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Plus, Edit, Trash2, MoreVertical, Save, ArrowRight } from "lucide-react";
 import HomeSidebar from "./HomeSidebar";
-import Taskbar from "./components/Taskbar.jsx";
+import GlobalHeader from "./components/GlobalHeader";
 import { roleService, userService, apiUtils } from "./services/api";
 
 const RoleManagementPage = () => {
@@ -49,11 +49,36 @@ const RoleManagementPage = () => {
   useEffect(() => {
     const load = async () => {
       // Client guard: only super_admin may access
-      const user = apiUtils.getCurrentUser();
-      if (user?.role?.name !== 'super_admin') {
-        window.location.href = '/';
+      // First check localStorage
+      let user = apiUtils.getCurrentUser();
+      
+      // If no user in localStorage or no role info, try to fetch from server
+      if (!user || !user.role) {
+        try {
+          const response = await fetch('/check-auth', { credentials: 'include' });
+          if (response.ok) {
+            const data = await response.json();
+            if (data.authenticated && data.user) {
+              user = {
+                ...data.user,
+                role: { name: data.user.role, display_name: data.user.role_display }
+              };
+              // Update localStorage with fresh data
+              localStorage.setItem('user', JSON.stringify(user));
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      }
+      
+      // Check if user has super_admin role
+      const roleName = typeof user?.role === 'string' ? user.role : user?.role?.name;
+      if (roleName !== 'super_admin') {
+        window.location.href = '/dashboard';
         return;
       }
+      
       const res = await userService.getAll();
       const adminsData = res?.data?.admins || [];
       const items = adminsData.map(mapUserToAdmin);
@@ -150,7 +175,7 @@ const RoleManagementPage = () => {
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <Taskbar title="John F." />
+        <GlobalHeader title="Role Management" />
         <main className="px-10 py-6 mb-10 flex flex-row gap-8 overflow-hidden">
         {/* Left Panel - Admin Lists */}
         <div className="flex-1 min-w-0">

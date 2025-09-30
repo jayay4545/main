@@ -35,10 +35,12 @@ Route::middleware(['auth'])->group(function () {
         return view('activitylogs');
     })->name('activitylogs');
 
-    // Role management page
-    Route::get('/role-management', function () {
-        return view('role-management');
-    })->name('role-management');
+    // Role management page (super_admin only)
+    Route::middleware(['role:super_admin'])->group(function () {
+        Route::get('/role-management', function () {
+            return view('role-management');
+        })->name('role-management');
+    });
 
     // Role management API (session auth + role check)
     Route::middleware(['role:super_admin'])->group(function () {

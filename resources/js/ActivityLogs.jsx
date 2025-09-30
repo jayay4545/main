@@ -1,6 +1,6 @@
 import React from 'react';
 import { RefreshCw, Filter, Clock } from 'lucide-react';
-import Taskbar from './components/Taskbar.jsx';
+import GlobalHeader from './components/GlobalHeader';
 import HomeSidebar from './HomeSidebar';
 
 const ActivityLogs = () => {
@@ -35,7 +35,7 @@ const ActivityLogs = () => {
     <div className="h-screen overflow-hidden bg-white flex">
       <HomeSidebar />
       <div className="flex-1 flex flex-col">
-        <Taskbar title="Activity Logs" />
+        <GlobalHeader title="Activity Logs" />
 
         <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">
           <div className="flex-1 min-h-0 overflow-y-auto">

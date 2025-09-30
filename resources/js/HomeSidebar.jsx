@@ -80,31 +80,44 @@ const HomeSidebar = ({ onSelect }) => {
       return roleName === 'super_admin' || (Array.isArray(permissions) && permissions.includes('*'));
     };
 
-    const localUser = apiUtils.getCurrentUser();
-    if (localUser) {
-      const isSA = computeIsSuperAdmin(localUser);
-      try { console.debug('[Sidebar] local role:', (typeof localUser.role === 'string' ? localUser.role : localUser.role?.name), 'isSuperAdmin:', isSA); } catch (e) {}
-      setIsSuperAdmin(isSA);
-      if (isSA !== false) return;
-    }
+    const checkUserRole = async () => {
+      // First check localStorage
+      const localUser = apiUtils.getCurrentUser();
+      if (localUser && localUser.role) {
+        const isSA = computeIsSuperAdmin(localUser);
+        console.debug('[Sidebar] local role:', (typeof localUser.role === 'string' ? localUser.role : localUser.role?.name), 'isSuperAdmin:', isSA);
+        setIsSuperAdmin(isSA);
+        return;
+      }
 
-    // Fallback to session-based auth endpoint
-    fetch('/check-auth', { credentials: 'include' })
-      .then((r) => (r && r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.authenticated && data.user) {
-          // Normalize to match apiUtils expectations
-          const normalized = {
-            ...data.user,
-            role: { name: data.user.role, display_name: data.user.role_display },
-          };
-          localStorage.setItem('user', JSON.stringify(normalized));
-          const isSA = computeIsSuperAdmin(normalized);
-          try { console.debug('[Sidebar] fetched role:', normalized.role?.name, 'isSuperAdmin:', isSA); } catch (e) {}
-          setIsSuperAdmin(isSA);
+      // Fallback to session-based auth endpoint
+      try {
+        const response = await fetch('/check-auth', { credentials: 'include' });
+        if (response.ok) {
+          const data = await response.json();
+          if (data?.authenticated && data.user) {
+            // Normalize to match apiUtils expectations
+            const normalized = {
+              ...data.user,
+              role: { name: data.user.role, display_name: data.user.role_display },
+            };
+            localStorage.setItem('user', JSON.stringify(normalized));
+            const isSA = computeIsSuperAdmin(normalized);
+            console.debug('[Sidebar] fetched role:', normalized.role?.name, 'isSuperAdmin:', isSA);
+            setIsSuperAdmin(isSA);
+          } else {
+            setIsSuperAdmin(false);
+          }
+        } else {
+          setIsSuperAdmin(false);
         }
-      })
-      .catch(() => {});
+      } catch (error) {
+        console.error('Error checking user role:', error);
+        setIsSuperAdmin(false);
+      }
+    };
+
+    checkUserRole();
   }, []);
 
   return (

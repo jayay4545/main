@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Printer, ChevronDown } from 'lucide-react';
-import Taskbar from './components/Taskbar.jsx';
+import GlobalHeader from './components/GlobalHeader';
 import HomeSidebar from './HomeSidebar';
 import ConfirmModal from './components/ConfirmModal.jsx';
 import PrintReceipt from './components/PrintReceipt.jsx';
@@ -244,7 +244,7 @@ const ViewApproved = () => {
       </div>
       
       <div className="flex-1 flex flex-col">
-        <Taskbar title="Transaction" />
+        <GlobalHeader title="View Approved" />
 
         <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">
           <h2 className="text-4xl font-bold text-blue-600">Transaction</h2>

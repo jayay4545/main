@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import HomeSidebar from "./HomeSidebar";
-import Taskbar from "./components/Taskbar.jsx";
+import GlobalHeader from "./components/GlobalHeader";
 import { Search, Filter, Download, Calendar } from "lucide-react";
 
 const Reports = () => {
@@ -63,7 +63,7 @@ const Reports = () => {
 
       {/* Main Section */}
       <div className="flex-1 flex flex-col">
-        <Taskbar title="John F." />
+        <GlobalHeader title="Reports" />
 
         {/* Main Content Area */}
         <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">

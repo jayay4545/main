@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Search, Eye, Edit, Trash2, Plus, Bell, Settings, ArrowRight, X } from "lucide-react";
 import HomeSidebar from "./HomeSidebar";
+import GlobalHeader from "./components/GlobalHeader";
 
 const UsersPage = () => {
   console.log('UsersPage component is rendering');
@@ -220,41 +221,7 @@ const UsersPage = () => {
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="bg-white px-6 py-4">
-          <div className="flex items-center justify-between">
-            
-            {/* Search Bar */}
-            <div className="flex-1 max-w-md mx-8">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-            
-            {/* User Profile */}
-            <div className="flex items-center space-x-4">
-              <div className="flex space-x-2">
-                <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
-                  <Bell className="h-4 w-4 text-gray-500" />
-                </div>
-                <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
-                  <Settings className="h-4 w-4 text-gray-500" />
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium text-gray-700">John F.</span>
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">J</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <GlobalHeader title="Users" />
 
         {/* Page Content */}
         <div className="flex-1 min-h-0 overflow-y-auto p-6">
