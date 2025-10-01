@@ -197,6 +197,21 @@ export const transactionService = {
   },
 };
 
+// Reports Services
+export const reportService = {
+  getOverview: async (params = {}) => {
+    const response = await api.get('/reports/overview', { params });
+    return response.data;
+  },
+  exportCsv: async (params = {}) => {
+    const response = await api.get('/reports/export', {
+      params,
+      responseType: 'blob',
+    });
+    return response;
+  },
+};
+
 // User Services
 export const userService = {
   getAll: async (params = {}) => {
