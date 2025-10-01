@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Equipment;
 use App\Models\Category;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
@@ -117,6 +118,13 @@ class EquipmentController extends Controller
 
             $equipment->load('category');
 
+            // Log the activity
+            ActivityLogService::logEquipmentActivity(
+                'Added new equipment',
+                "Added {$equipment->brand} ({$equipment->serial_number}) to inventory",
+                $equipment
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Equipment added successfully',
@@ -202,8 +210,20 @@ class EquipmentController extends Controller
                 $validated['receipt_image'] = $request->file('receipt_image')->store('equipment/receipt_images', 'public');
             }
 
+            // Store old values for logging
+            $oldValues = $equipment->toArray();
+            
             $equipment->update($validated);
             $equipment->load('category');
+
+            // Log the activity
+            ActivityLogService::logEquipmentActivity(
+                'Updated equipment',
+                "Updated {$equipment->brand} ({$equipment->serial_number})",
+                $equipment,
+                $oldValues,
+                $equipment->toArray()
+            );
 
             return response()->json([
                 'success' => true,
@@ -234,6 +254,13 @@ class EquipmentController extends Controller
                 'message' => 'Cannot delete equipment with active transactions'
             ], 422);
         }
+
+        // Log the activity before deletion
+        ActivityLogService::logEquipmentActivity(
+            'Deleted equipment',
+            "Deleted {$equipment->brand} ({$equipment->serial_number}) from inventory",
+            $equipment
+        );
 
         $equipment->delete();
 

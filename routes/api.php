@@ -6,6 +6,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\RequestController;
 use App\Http\Controllers\Api\EquipmentController;
+use App\Http\Controllers\Api\ActivityLogController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -60,6 +61,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar']);
     Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
 });
+
+// Activity Logs API routes moved to web.php to use session authentication
 
 // Role management API routes
 // Role management routes moved to web.php to use session auth

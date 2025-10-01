@@ -5,6 +5,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\ActivityLogController;
 
 // Authentication routes
 Route::get('/', [AuthController::class, 'showLoginForm'])->name('login');
@@ -12,6 +13,9 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/check-auth', [AuthController::class, 'checkAuth'])->name('check.auth');
 Route::get('/login-data', [AuthController::class, 'getLoginData'])->name('login.data');
+Route::get('/csrf-token', function () {
+    return response()->json(['csrf_token' => csrf_token()]);
+})->name('csrf.token');
 
 // Protected routes (require authentication)
 Route::middleware(['auth'])->group(function () {
@@ -34,6 +38,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/activitylogs', function () {
         return view('activitylogs');
     })->name('activitylogs');
+
+    // Activity Logs JSON endpoints (session-authenticated)
+    Route::get('/activity-logs', [ActivityLogController::class, 'index']);
+    Route::get('/activity-logs/user/{userId}', [ActivityLogController::class, 'forUser']);
+    Route::get('/activity-logs/model/{modelType}/{modelId?}', [ActivityLogController::class, 'forModel']);
+    Route::get('/activity-logs/recent', [ActivityLogController::class, 'recent']);
+    Route::get('/activity-logs/search', [ActivityLogController::class, 'search']);
 
     // Role management page (super_admin only)
     Route::middleware(['role:super_admin'])->group(function () {

@@ -7,40 +7,26 @@ import SimpleConfirmModal from './components/SimpleConfirmModal.jsx';
 import SuccessModal from './components/SuccessModal';
 import ViewTransactionModal from './components/ViewTransactionModal';
 import EditTransactionModal from './components/EditTransactionModal';
+import { useRequestData } from './hooks/useRequestData';
+import { activityLogService } from './services/activityLogService';
 import api from './services/api';
 
 const ViewRequest = () => {
-  const [pendingRequests, setPendingRequests] = useState([]);
-  const [approvedRequests, setApprovedRequests] = useState([]);
-  const [currentHolders, setCurrentHolders] = useState([]);
-  const [verifyReturns, setVerifyReturns] = useState([]); // Added this missing state
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Use custom hook for data management
+  const {
+    pendingRequests,
+    approvedRequests,
+    currentHolders,
+    verifyReturns,
+    loading,
+    error,
+    refreshData,
+    setPendingRequests,
+    setApprovedRequests,
+    setCurrentHolders
+  } = useRequestData();
 
-  useEffect(() => {
-    // Fetch pending and approved requests from backend
-    const fetchRequests = async () => {
-      try {
-        setLoading(true);
-        const pendingRes = await fetch('/api/requests?status=pending');
-        const approvedRes = await fetch('/api/requests?status=approved');
-        const pendingData = await pendingRes.json();
-        const approvedData = await approvedRes.json();
-        if (pendingData.success && Array.isArray(pendingData.data.data)) {
-          setPendingRequests(pendingData.data.data);
-        }
-        if (approvedData.success && Array.isArray(approvedData.data.data)) {
-          setApprovedRequests(approvedData.data.data);
-        }
-      } catch (e) {
-        console.error('Failed to fetch requests:', e);
-        setError(e.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRequests();
-  }, []);
+  // Removed duplicate useEffect - using fetchData() instead
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [view, setView] = useState('viewRequest');
@@ -136,45 +122,74 @@ const ViewRequest = () => {
     const { type, requestData } = modalState;
     
     try {
-    if (type === 'approve') {
+      setLoading(true);
+      
+      if (type === 'approve') {
         const response = await api.post(`/requests/${requestData.id}/approve`, {
           approval_notes: modalState.reason
         });
         
         if (response.data.success) {
-      // Remove from pending requests
-      setPendingRequests(prev => prev.filter(req => req.id !== requestData.id));
-      
-      // Add to approved requests
-      const approvedRequest = {
-        ...requestData,
+          // Log the approval activity
+          await activityLogService.logRequestApproval(requestData.id, requestData);
+          
+          // Remove from pending requests
+          setPendingRequests(prev => prev.filter(req => req.id !== requestData.id));
+          
+          // Add to approved requests
+          const approvedRequest = {
+            ...requestData,
             status: "approved",
             approved_by_name: "Admin",
             approved_at: new Date().toISOString()
-      };
-      
-      setApprovedRequests(prev => [...prev, approvedRequest]);
-      
-      // Redirect to dedicated View Approved page
-      if (typeof window !== 'undefined') {
-        window.location.href = '/viewapproved';
-          }
-      }
-    } else if (type === 'reject') {
+          };
+          
+          setApprovedRequests(prev => [...prev, approvedRequest]);
+          
+          // Show success message
+          setSuccessModal({
+            isOpen: true,
+            type: 'approve',
+            requestData: requestData
+          });
+          
+          // Redirect to dedicated View Approved page after a short delay
+          setTimeout(() => {
+            if (typeof window !== 'undefined') {
+              window.location.href = '/viewapproved';
+            }
+          }, 2000);
+        }
+      } else if (type === 'reject') {
         const response = await api.post(`/requests/${requestData.id}/reject`, {
           rejection_reason: modalState.reason
         });
         
         if (response.data.success) {
-      // Remove from pending requests
-      setPendingRequests(prev => prev.filter(req => req.id !== requestData.id));
+          // Log the rejection activity
+          await activityLogService.logRequestRejection(requestData.id, requestData, modalState.reason);
+          
+          // Remove from pending requests
+          setPendingRequests(prev => prev.filter(req => req.id !== requestData.id));
+          
+          // Show success message
+          setSuccessModal({
+            isOpen: true,
+            type: 'reject',
+            requestData: requestData
+          });
         }
-    }
-    
-    handleModalClose();
+      }
+      
+      handleModalClose();
     } catch (err) {
       console.error('Error processing request:', err);
+      setError('Error processing request: ' + (err.response?.data?.message || err.message));
+      
+      // Show error toast or modal
       alert('Error processing request: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -217,113 +232,30 @@ const ViewRequest = () => {
     });
   };
 
-  const handleTransactionUpdate = (updatedTransaction) => {
-    // Update the current holders list with the updated transaction
-    setCurrentHolders(prev => 
-      prev.map(t => t.id === updatedTransaction.id ? updatedTransaction : t)
-    );
-  };
-
-  // Fetch data on component mount
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const handleTransactionUpdate = async (updatedTransaction) => {
     try {
-      setLoading(true);
-      setError(null);
+      // Log the transaction update
+      await activityLogService.logTransactionUpdate(updatedTransaction.id, updatedTransaction);
       
-      // Fetch pending requests
-      const pendingResponse = await api.get('/requests', { params: { status: 'pending' } });
-      if (pendingResponse.data.success) {
-        setPendingRequests(pendingResponse.data.data);
-      } else {
-        console.error('Failed to fetch pending requests:', pendingResponse.data.message);
-      }
-      
-      // Fetch approved requests
-      const approvedResponse = await api.get('/requests', { params: { status: 'approved' } });
-      if (approvedResponse.data.success) {
-        setApprovedRequests(approvedResponse.data.data);
-      } else {
-        console.error('Failed to fetch approved requests:', approvedResponse.data.message);
-      }
-      
-      // Fetch transactions for Current holder view
-      const transactionsResponse = await api.get('/transactions');
-      if (transactionsResponse.data.success) {
-        const rows = Array.isArray(transactionsResponse.data.data) ? transactionsResponse.data.data : [];
-        const mapped = rows.map((t) => ({
-          id: t.id,
-          name: t.full_name || t.name || '',
-          position: t.position || '',
-          item: t.equipment_name || t.item || '',
-          requestMode: t.request_mode || 'onsite',
-          requestDate: t.created_at,
-          transactionNumber: t.transaction_number || null,
-          status: t.status || 'pending',
-          expectedReturnDate: t.expected_return_date || null,
-          releaseDate: t.issued_at || null,
-          returnDate: t.returned_at || null,
-          releaseCondition: t.release_condition || t.condition_on_issue || null,
-          returnCondition: t.return_condition || t.condition_on_return || null,
-          releaseNotes: t.release_notes || t.notes || '',
-          returnNotes: t.return_notes || '',
-          brand: t.brand || null,
-          model: t.model || null,
-          categoryName: t.category_name || null,
-        }));
-        setCurrentHolders(mapped);
-
-        // Populate verify returns (items that need return verification)
-        const returnsToVerify = rows.filter(r => 
-          ['returned', 'pending_return', 'released'].includes((r.status || '').toString().toLowerCase())
-        ).map((t) => ({
-          id: t.id,
-          full_name: t.full_name || t.name || '',
-          position: t.position || '',
-          equipment_name: t.equipment_name || t.item || '',
-          request_mode: t.request_mode || 'onsite',
-          return_date: t.return_date || t.expected_return_date || null,
-          expected_return_date: t.expected_return_date || null,
-        }));
-        setVerifyReturns(returnsToVerify);
-
-        // If there are transactions, show the Current holder view automatically
-        if (mapped.length > 0) {
-          setView('currentHolder');
-        }
-
-        // Populate approved requests from transactions (statuses like 'released' or 'completed')
-        const approved = rows.filter(r => ['released', 'completed', 'approved'].includes((r.status || '').toString().toLowerCase()))
-          .map((t) => ({
-            id: t.id,
-            name: t.full_name || t.name || '',
-            position: t.position || '',
-            item: t.equipment_name || t.item || '',
-            status: t.status || 'approved',
-            approvedBy: t.released_by || t.approved_by || null,
-            approvedAt: t.release_date || t.issued_at || t.created_at || null,
-          }));
-
-        if (approved.length > 0) {
-          setApprovedRequests(approved);
-        }
-      } else {
-        console.error('Failed to fetch transactions:', transactionsResponse.data.message);
-        setCurrentHolders([]);
-        setVerifyReturns([]); // Make sure to clear this too
-      }
-      
-    } catch (err) {
-      console.error('Error fetching data:', err);
-      setError('Failed to load data');
-      setVerifyReturns([]); // Clear on error
-    } finally {
-      setLoading(false);
+      // Update the current holders list with the updated transaction
+      setCurrentHolders(prev => 
+        prev.map(t => t.id === updatedTransaction.id ? updatedTransaction : t)
+      );
+    } catch (error) {
+      console.error('Error logging transaction update:', error);
+      // Still update the UI even if logging fails
+      setCurrentHolders(prev => 
+        prev.map(t => t.id === updatedTransaction.id ? updatedTransaction : t)
+      );
     }
   };
+
+  // Auto-switch to current holder view if there are transactions
+  useEffect(() => {
+    if (currentHolders.length > 0 && view === 'viewRequest') {
+      setView('currentHolder');
+    }
+  }, [currentHolders.length, view]);
 
   // Small UI formatter helpers
   const formatRequestMode = (mode) => {
@@ -351,8 +283,22 @@ const ViewRequest = () => {
 
       <main className="px-10 py-6 mb-10 flex flex-col overflow-hidden">
         <div className="flex-1 min-h-0 overflow-y-auto">
-        <h2 className="text-4xl font-bold  text-blue-600">Transaction</h2>
-        <h3 className="text-base font-semibold text-gray-700 mt-3 tracking-wide">QUICK ACCESS</h3>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-4xl font-bold text-blue-600">Transaction</h2>
+            <h3 className="text-base font-semibold text-gray-700 mt-3 tracking-wide">QUICK ACCESS</h3>
+          </div>
+          <button
+            onClick={refreshData}
+            disabled={loading}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 transition-colors"
+          >
+            <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
+          </button>
+        </div>
 
 
           {/* Stats Cards */}

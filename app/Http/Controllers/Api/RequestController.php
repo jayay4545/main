@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
@@ -159,6 +160,13 @@ class RequestController extends Controller
                     DB::raw("COALESCE(categories.name, '') as category_name")
                 )
                 ->first();
+
+            // Log the activity
+            ActivityLogService::logRequestActivity(
+                'Created a new request',
+                "Created request #{$requestNumber} for {$createdRequest->equipment_name}",
+                (object)['id' => $requestId, 'request_number' => $requestNumber]
+            );
 
             return response()->json([
                 'success' => true,
@@ -390,6 +398,13 @@ class RequestController extends Controller
                     'updated_at' => now(),
                 ]);
             });
+
+            // Log the activity
+            ActivityLogService::logRequestActivity(
+                'Approved request',
+                "Approved request #{$equipmentRequest->request_number}",
+                (object)['id' => $id, 'request_number' => $equipmentRequest->request_number]
+            );
 
             // Fetch updated request with related data
             $updatedRequest = DB::table('requests')

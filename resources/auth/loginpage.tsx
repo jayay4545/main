@@ -38,17 +38,39 @@ const LoginPage: React.FC<LoginPageProps> = ({ onAuthSuccess }) => {
     setErrors({});
     
     try {
+      // Get CSRF token from meta tag or fetch from server
+      let csrfToken: string | null = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || null;
+      
+      if (!csrfToken) {
+        // Fetch CSRF token from server
+        const tokenResponse = await fetch('/csrf-token', {
+          credentials: 'same-origin'
+        });
+        if (tokenResponse.ok) {
+          const tokenData = await tokenResponse.json();
+          csrfToken = tokenData.csrf_token;
+        } else {
+          throw new Error('Failed to get CSRF token');
+        }
+      }
+
+      if (!csrfToken) {
+        throw new Error('CSRF token is required');
+      }
+
+      // Create form data instead of JSON
+      const formData = new FormData();
+      formData.append('email', email.trim());
+      formData.append('password', password);
+      formData.append('_token', csrfToken);
+
       const response = await fetch('/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+          'X-CSRF-TOKEN': csrfToken,
         },
         credentials: 'same-origin', // Include cookies for session authentication
-        body: JSON.stringify({
-          email: email.trim(),
-          password: password,
-        }),
+        body: formData,
       });
 
       // Check if the response is a redirect (status 302)
