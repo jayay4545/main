@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\RequestController;
 use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\ActivityLogController;
+use App\Http\Controllers\Api\ReportController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -66,3 +67,7 @@ Route::middleware(['auth'])->group(function () {
 
 // Role management API routes
 // Role management routes moved to web.php to use session auth
+
+// Reports
+Route::get('/reports/overview', [ReportController::class, 'overview']);
+Route::get('/reports/export', [ReportController::class, 'exportCsv']);
