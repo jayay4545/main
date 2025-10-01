@@ -3,6 +3,32 @@ import HomeSidebar from './HomeSidebar';
 import { Copy, Plus, Minus, X, ChevronRight } from 'lucide-react';
 import GlobalHeader from './components/GlobalHeader';
 
+// Add custom scrollbar styles
+const scrollbarStyles = `
+  .select-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #3B82F6 #F3F4F6;
+  }
+  .select-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+  .select-scrollbar::-webkit-scrollbar-track {
+    background: #F3F4F6;
+    border-radius: 4px;
+  }
+  .select-scrollbar::-webkit-scrollbar-thumb {
+    background: #3B82F6;
+    border-radius: 4px;
+  }
+  .select-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #2563EB;
+  }
+`;
+
+const style = document.createElement('style');
+style.textContent = scrollbarStyles;
+document.head.appendChild(style);
+
 const rows = [
   { id: 1, item: 'Lenovo', serial: '353454', date: 'Sept 05 2025', status: 'Available', price: '₱0.00' },
   { id: 2, item: 'Mouse', serial: '4543543', date: 'Sept 5 2025', status: 'Available', price: '₱0.00' },
@@ -22,7 +48,6 @@ const AddStocks = () => {
   const [categories, setCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const [formData, setFormData] = useState({
     category: '',
     serial_number: '',
@@ -82,13 +107,6 @@ const AddStocks = () => {
   // Filter and sort equipment
   const getFilteredAndSortedEquipment = () => {
     let filteredEquipment = [...equipment];
-
-    // Apply category filter
-    if (selectedCategory !== 'all') {
-      filteredEquipment = filteredEquipment.filter(
-        item => item.category?.id === parseInt(selectedCategory)
-      );
-    }
 
     // Apply search filter
     if (searchTerm) {
@@ -238,16 +256,7 @@ const AddStocks = () => {
                   </div>
                 </div>
               </div>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-4 py-2 rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Categories</option>
-                {categories.map(category => (
-                  <option key={category.id} value={category.id}>{category.name}</option>
-                ))}
-              </select>
+
             </div>
             <div className="space-x-3">
               <button 
@@ -689,6 +698,8 @@ const AddItemModal = ({ onClose, categories = [], onSuccess }) => {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [preview, setPreview] = useState({
     item_image: null,
     receipt_image: null
@@ -790,18 +801,18 @@ const AddItemModal = ({ onClose, categories = [], onSuccess }) => {
         throw new Error(data.message || 'Error adding equipment');
       }
 
-      // Reset form and refresh
-      handleReset();
-      if (onSuccess) {
-        onSuccess();
-      }
+      // Show success message
+      setShowSuccess(true);
       
-      // Refresh equipment list
-      if (onSuccess) {
-        onSuccess();
-      }
-      
-      onClose(); // Close modal on success
+      // Reset form and refresh after a short delay
+      setTimeout(() => {
+        handleReset();
+        if (onSuccess) {
+          onSuccess();
+        }
+        setShowSuccess(false);
+        onClose();
+      }, 2000);
     } catch (error) {
       setErrors({ submit: error.message });
     } finally {
@@ -848,25 +859,50 @@ const AddItemModal = ({ onClose, categories = [], onSuccess }) => {
               <label className="text-sm text-gray-600">Category*</label>
               <div className="mt-2">
                 <div className="relative">
-                  <select 
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 pr-8 rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.category ? 'border-red-500' : ''
-                    } appearance-none`}
-                    style={{ maxHeight: '200px' }}
+                  {/* Dropdown trigger button */}
+                  <div 
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className={`w-full px-3 py-2 rounded-md bg-gray-100 cursor-pointer flex items-center justify-between ${
+                      errors.category ? 'border-red-500' : 'border-transparent'
+                    } border hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                   >
-                    <option value="">Select a category</option>
-                    {categories && categories.map(category => (
-                      <option key={category.id} value={category.id}>
-                        {category.name || 'Unknown Category'}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <ChevronRight className="h-4 w-4 rotate-90" />
+                    <span className={!formData.category ? 'text-gray-500' : ''}>
+                      {formData.category ? 
+                        categories.find(c => c.id === formData.category)?.name 
+                        : 'Select a category'}
+                    </span>
+                    <ChevronRight 
+                      className={`h-4 w-4 text-gray-700 transform transition-transform ${
+                        isDropdownOpen ? 'rotate-90' : ''
+                      }`} 
+                    />
                   </div>
+
+                  {/* Dropdown menu */}
+                  {isDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-white rounded-md shadow-lg border border-gray-200">
+                      <div 
+                        className="max-h-48 overflow-y-auto select-scrollbar"
+                      >
+                        {categories && categories.map(category => (
+                          <div
+                            key={category.id}
+                            className={`px-3 py-2 cursor-pointer hover:bg-blue-50 ${
+                              formData.category === category.id ? 'bg-blue-50 text-blue-600' : ''
+                            }`}
+                            onClick={() => {
+                              handleInputChange({
+                                target: { name: 'category', value: category.id }
+                              });
+                              setIsDropdownOpen(false);
+                            }}
+                          >
+                            {category.name || 'Unknown Category'}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 {errors.category && <p className="mt-1 text-sm text-red-500">{errors.category}</p>}
               </div>

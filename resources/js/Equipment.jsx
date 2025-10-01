@@ -39,6 +39,7 @@ const Equipment = () => {
   const [selected, setSelected] = useState(null);
   const [categories, setCategories] = useState([]);
   const [equipment, setEquipment] = useState([]);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,11 +59,18 @@ const Equipment = () => {
             const assignedEquipment = equipmentData.filter(eq => eq.category_id);
             const unassignedEquipment = equipmentData.filter(eq => !eq.category_id);
             
-            // Update categories with equipment count
-            const categoriesWithCount = categoriesData.map(cat => ({
-              ...cat,
-              qty: `${assignedEquipment.filter(eq => eq.category_id === cat.id).length}`
-            }));
+            // Update categories with dynamic available/total counts
+            const categoriesWithCount = categoriesData.map(cat => {
+              const categoryEquipment = assignedEquipment.filter(eq => eq.category_id === cat.id);
+              const available = categoryEquipment.filter(eq => eq.status === 'available').length;
+              const total = categoryEquipment.length;
+              return {
+                ...cat,
+                qty: `${available}/${total}`,
+                availableCount: available,
+                totalCount: total
+              };
+            });
             setCategories(categoriesWithCount);
             setEquipment(assignedEquipment);
           }
@@ -126,32 +134,75 @@ const Equipment = () => {
             )}
             {selected && (
               <>
-                <div className="mt-3 flex items-center justify-between">
-                  <h3 className="text-base font-semibold text-gray-700">
-                    Inventory / {selected}
-                  </h3>
+                <div className="mt-3">
+                  <button 
+                    onClick={() => setSelected(null)} 
+                    className="mb-4 flex items-center text-blue-600 hover:text-blue-700 transition-colors"
+                  >
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      className="h-5 w-5 mr-1" 
+                      viewBox="0 0 20 20" 
+                      fill="currentColor"
+                    >
+                      <path 
+                        fillRule="evenodd" 
+                        d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" 
+                        clipRule="evenodd" 
+                      />
+                    </svg>
+                    <span>Back</span>
+                  </button>
                 </div>
                 <div className="mt-6 flex flex-col items-start w-full">
                   {categories.filter(cat => cat.name === selected).map(cat => (
                     <div key={cat.id} className="w-full">
-                      <div className="mb-2 text-lg font-bold text-blue-600">{cat.name}</div>
-                      <div className="overflow-x-auto">
-                        <div className="grid grid-cols-3 gap-4 px-2 mb-2 text-gray-600 text-sm font-semibold">
-                          <div>Items</div>
-                          <div>Available/Total</div>
-                          <div>Total Price(₱)</div>
-                        </div>
-                          {equipment.filter(eq => eq.category_id === cat.id && !(eq.name === 'Lenovo' && eq.serial_number === '87123qwe')).length === 0 ? (
-                            <div className="text-gray-400 text-sm px-2">No equipment found for this category.</div>
-                          ) : (
-                            equipment.filter(eq => eq.category_id === cat.id && !(eq.name === 'Lenovo' && eq.serial_number === '87123qwe')).map(eq => (
-                              <div key={eq.id} className="grid grid-cols-3 gap-4 bg-white rounded-lg shadow p-3 mb-3 items-center">
-                                <div className="font-medium">{eq.name}</div>
-                                <div className="text-center">{eq.available_stock || '10'}/{eq.total_stock || '20'}</div>
-                                <div className="text-right">₱{eq.purchase_price ? Number(eq.purchase_price).toFixed(2) : '0.00'}</div>
+                      <div className="mb-6 text-2xl font-semibold text-gray-800">Inventory / {selected}</div>
+                      
+                      {/* Column Headers */}
+                      <div className="grid grid-cols-3 gap-4 mb-4 text-gray-700 font-semibold text-sm">
+                        <div className="text-left">Items</div>
+                        <div className="text-center">Available/Total</div>
+                        <div className="text-right">Total Price(₱)</div>
+                      </div>
+                      
+                      {/* Equipment List */}
+                      <div className="space-y-3">
+                        {(() => {
+                          const categoryEquipment = equipment.filter(eq => eq.category_id === cat.id && !(eq.name === 'Lenovo' && eq.serial_number === '87123qwe'));
+                          
+                          if (categoryEquipment.length === 0) {
+                            return <div className="text-gray-400 text-sm">No equipment found for this category.</div>;
+                          }
+
+                          // Group equipment by name/brand to show aggregated counts
+                          const groupedEquipment = categoryEquipment.reduce((acc, eq) => {
+                            const key = eq.name || eq.brand || 'Unknown';
+                            if (!acc[key]) {
+                              acc[key] = {
+                                name: key,
+                                total: 0,
+                                available: 0,
+                                price: eq.purchase_price || 0
+                              };
+                            }
+                            acc[key].total += 1;
+                            if (eq.status === 'available') {
+                              acc[key].available += 1;
+                            }
+                            return acc;
+                          }, {});
+
+                          return Object.values(groupedEquipment).map((group, index) => (
+                            <div key={`${group.name}-${index}`} className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+                              <div className="grid grid-cols-3 gap-4 items-center">
+                                <div className="text-left font-medium text-gray-800">{group.name}</div>
+                                <div className="text-center text-gray-700">{group.available}/{group.total}</div>
+                                <div className="text-right text-gray-800">₱{Number(group.price).toFixed(2)}</div>
                               </div>
-                            ))
-                        )}
+                            </div>
+                          ));
+                        })()}
                       </div>
                     </div>
                   ))}
@@ -161,6 +212,39 @@ const Equipment = () => {
           </div>
         </main>
       </div>
+
+      {/* Success Popup */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0" onClick={() => setShowSuccess(false)} />
+          <div className="relative bg-white rounded-lg shadow-md p-4 flex items-center max-w-sm w-full mx-4">
+            <div className="flex items-start w-full">
+              <div className="flex-shrink-0 mt-0.5">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              <div className="ml-3 w-0 flex-1">
+                <h3 className="text-base font-semibold text-gray-900">Success!</h3>
+                <p className="mt-1 text-sm text-gray-500">Equipment has been added successfully.</p>
+              </div>
+              <div className="ml-4 flex-shrink-0 flex">
+                <button
+                  onClick={() => setShowSuccess(false)}
+                  className="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
+                >
+                  <span className="sr-only">Close</span>
+                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
