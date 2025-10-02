@@ -161,19 +161,10 @@ const ProfileDetailsModal = ({ isOpen, onClose, user }) => {
           </div>
         </div>
 
-        {/* Personal Information */}
-        <div className="px-6 pb-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">Personal Information</h3>
-            {!isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center space-x-2 px-4 py-2 text-[#2262C6] hover:bg-blue-50 rounded-lg transition-colors"
-              >
-                <Edit className="w-4 h-4" />
-                <span>Edit</span>
-              </button>
-            )}
+       {/* Personal Information */}
+      <div className="px-6 pb-6">
+     <div className="flex items-center justify-between mb-6">
+    <h3 className="text-xl font-semibold text-gray-900">Personal Information</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

@@ -232,7 +232,7 @@ const RoleManagementPage = () => {
                 key={admin.id}
                 onClick={() => setSelectedAdmin(admin)}
                 className={`p-4 rounded-xl cursor-pointer transition-all duration-200 border ${
-                  selectedAdmin.id === admin.id
+                  selectedAdmin?.id === admin.id
                     ? 'bg-blue-50 border-blue-200 shadow'
                     : 'bg-white border-gray-200 hover:shadow'
                 }`}
@@ -248,9 +248,9 @@ const RoleManagementPage = () => {
         
         {/* Right Panel - Admin Details */}
         <div className="w-full max-w-xs">
-          <div className="bg-white rounded-xl shadow p-6 border border-gray-200">
+          <div className="bg-white rounded-xl shadow p-6 border border-gray-200 flex flex-col h-[calc(100vh-200px)]">
             {/* Profile Section */}
-            <div className="text-center mb-6">
+            <div className="text-center mb-6 flex-shrink-0">
               {selectedAdmin?.profileImage ? (
                 <img src={selectedAdmin.profileImage} alt={selectedAdmin.name} className="w-20 h-20 rounded-full mx-auto mb-3 object-cover" />
               ) : (
@@ -264,10 +264,10 @@ const RoleManagementPage = () => {
               <p className="text-gray-500">{selectedAdmin?.position || ''}</p>
             </div>
             
-            {/* Access Tools Section */}
-            <div className="mb-6">
-              <h4 className="text-sm font-medium text-gray-900 mb-4">Access tools</h4>
-              <div className="space-y-3">
+            {/* Access Tools Section - Scrollable */}
+            <div className="flex-1 overflow-y-auto mb-4">
+              <h4 className="text-sm font-medium text-gray-900 mb-4 sticky top-0 bg-white pb-2">Access tools</h4>
+              <div className="space-y-3 pr-2">
                 {selectedAdmin && permissionKeys.map((item) => (
                   <div key={item.key} className="flex items-center justify-between">
                     <span className="text-sm text-gray-700">
@@ -284,10 +284,10 @@ const RoleManagementPage = () => {
               </div>
             </div>
             
-            {/* Save Button */}
+            {/* Save Button - Fixed at bottom */}
             <button
               onClick={handleSaveAccessTools}
-              className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60"
+              className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 flex-shrink-0"
               disabled={overlay.visible && overlay.status === 'saving'}
             >
               <Save className="h-4 w-4 mr-2" />

@@ -201,6 +201,7 @@ const EmployeePage = () => {
               <button className="px-4 py-2 bg-gray-200 text-gray-600 rounded-lg">
                 Filter
               </button>
+              
             </div>
             <button 
               onClick={() => setIsAddOpen(true)} 
