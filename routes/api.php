@@ -51,7 +51,7 @@ use App\Http\Controllers\Api\CategoryController;
 Route::apiResource('categories', CategoryController::class);
 
 // User management API routes
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\Api\UserController;
 Route::apiResource('users', UserController::class);
 
 // Profile management API routes
