@@ -363,9 +363,9 @@ const UsersPage = () => {
       </div>
 
       {/* Add User Modal */}
-      {showAddModal && (
-         <div className="fixed inset-0 bg-gray-500 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
-         <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-6">
+     {showAddModal && (
+    <div className="fixed inset-0 bg-gray-900/30 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="bg-white backdrop-blur-md rounded-xl shadow-2xl w-full max-w-3xl p-6 border border-white/20">
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-8 py-6 rounded-t-xl border-b border-blue-200">
               <div className="flex items-center justify-between">
@@ -383,90 +383,85 @@ const UsersPage = () => {
               </div>
             </div>
             
-            {/* Form Content */}
-            <div className="p-8 bg-white">
-              <div className="grid grid-cols-2 gap-6">
-                {/* Left Column */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Name<span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={newUser.name}
-                      onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Rica Alorro*"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email<span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      value={newUser.email}
-                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="NOC tier 1*"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Password<span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      value={newUser.password}
-                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="VOIP*"
-                    />
-                  </div>
-                </div>
-                
-                {/* Right Column */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Username<span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={newUser.username}
-                      onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Rica Alorro*"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Account type
-                    </label>
-                    <select
-                      value={newUser.accountType}
-                      onChange={(e) => setNewUser({ ...newUser, accountType: e.target.value })}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="Employee">Employee</option>
-                      <option value="IT admin">IT Admin</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Confirm Password<span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      value={newUser.confirmPassword}
-                      onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="VOIP*"
-                    />
-                  </div>
-                </div>
-              </div>
+        {/* Form Content */}
+    <div className="p-8 bg-white">
+  <div className="grid grid-cols-2 gap-6">
+    {/* Left Column */}
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Name<span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={newUser.name}
+          onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Email<span className="text-red-500">*</span>
+        </label>
+        <input
+          type="email"
+          value={newUser.email}
+          onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Password<span className="text-red-500">*</span>
+        </label>
+        <input
+          type="password"
+          value={newUser.password}
+          onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+    </div>
+    
+    {/* Right Column */}
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Username<span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={newUser.username}
+          onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Account type
+        </label>
+        <select
+          value={newUser.accountType}
+          onChange={(e) => setNewUser({ ...newUser, accountType: e.target.value })}
+          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="Employee">Employee</option>
+          <option value="IT admin">IT Admin</option>
+        </select>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Confirm Password<span className="text-red-500">*</span>
+        </label>
+        <input
+          type="password"
+          value={newUser.confirmPassword}
+          onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
+          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+    </div>
+  </div>
               
               {/* Action Buttons */}
               <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
@@ -495,8 +490,8 @@ const UsersPage = () => {
 
       {/* Edit User Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
+     <div className="fixed inset-0 bg-gray-900/30 backdrop-blur-sm flex items-center justify-center z-50">
+     <div className="relative bg-white backdrop-blur-md rounded-lg shadow-xl w-full max-w-2xl mx-4 border border-white/20">
             <div className="p-6">
               {/* Header with title and close button */}
               <div className="flex items-center justify-between mb-6">
@@ -624,8 +619,8 @@ const UsersPage = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-         <div className="fixed inset-0 bg-gray-500 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="relative p-5 border w-96 shadow-lg rounded-md bg-white">
+     <div className="fixed inset-0 bg-gray-900/30 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="relative p-5 border border-gray-200 w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Delete User</h3>
               <p className="text-sm text-gray-500 mb-6">
@@ -653,10 +648,10 @@ const UsersPage = () => {
         </div>
       )}
 
-      {/* View User Modal */}
-      {showViewModal && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+     {/* View User Modal */}
+     {showViewModal && (
+    <div className="fixed inset-0 bg-gray-900/30 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="relative bg-white backdrop-blur-md rounded-lg shadow-xl w-full max-w-md mx-4 border border-white/20">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold text-blue-600">User Details</h3>
