@@ -19,9 +19,15 @@ Route::get('/csrf-token', function () {
 
 // Protected routes (require authentication)
 Route::middleware(['auth'])->group(function () {
+    // Admin dashboard (for super_admin and admin roles)
     Route::get('/dashboard', function () {
         return view('home'); // loads resources/views/home.blade.php with Dashboard component
     })->name('dashboard');
+
+    // Employee dashboard (for employee role)
+    Route::get('/employee/dashboard', function () {
+        return view('employee_dashboard');
+    })->name('employee.dashboard');
 
     Route::get('/employee', function () {
         return view('employee_page');

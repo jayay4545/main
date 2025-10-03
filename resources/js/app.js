@@ -1,8 +1,8 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { initReact } from './utils/initReact';
-import Employee from './Users/Employee.jsx';
 import EmployeePage from './EmployeePage.jsx';
+import EmployeeDashboard from './Users/EmployeeDashboard.jsx';
 import SimpleEmployee from './SimpleEmployee';
 import ViewRequest from './ViewRequest';
 import ViewApproved from './ViewApproved.jsx';
@@ -159,11 +159,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             };
             
-            // Render Employee component directly on employee page
+            // Render SimpleEmployee component directly on employee page
             try {
-                console.log('Rendering Employee component on employee-root');
-                root.render(React.createElement(Employee));
-                console.log('Employee component rendered to employee-root');
+                console.log('Rendering SimpleEmployee component on employee-root');
+                root.render(React.createElement(SimpleEmployee));
+                console.log('SimpleEmployee component rendered to employee-root');
             } catch (employeeError) {
                 console.error('Error rendering Employee component:', employeeError);
                 // Try to use the inline fallback component if available
@@ -305,6 +305,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Check for employee-dashboard-root (for employee dashboard page)
+    const employeeDashboardContainer = document.getElementById('employee-dashboard-root');
+    console.log('employee-dashboard-root element found:', employeeDashboardContainer);
+    
+    if (employeeDashboardContainer) {
+        try {
+            console.log('Initializing EmployeeDashboard component');
+            const root = createRoot(employeeDashboardContainer);
+            root.render(React.createElement(EmployeeDashboard));
+            console.log('EmployeeDashboard component rendered successfully');
+        } catch (error) {
+            console.error('Error rendering EmployeeDashboard component:', error);
+            // Display error message in the UI
+            employeeDashboardContainer.innerHTML = `
+              <div style="padding: 20px; background-color: #ffebee; border: 2px solid #f44336; border-radius: 5px; margin: 20px; text-align: center;">
+                <h2 style="color: #d32f2f;">Employee Dashboard Failed to Load</h2>
+                <p>There was an error loading the Employee Dashboard component. Please try reloading the page.</p>
+                <button onclick="window.location.reload()" style="padding: 10px 20px; background-color: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+                  Reload Page
+                </button>
+              </div>
+            `;
+        }
+    }
+    
     // Check for activitylogs-root (for activity logs page)
     const activityLogsContainer = document.getElementById('activitylogs-root');
     console.log('activitylogs-root element found:', activityLogsContainer);
@@ -354,9 +379,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Try to render the main component with error handling
             try {
-                console.log('Attempting to render Employee component');
-                root.render(React.createElement(Employee));
-                console.log('Employee component rendered to root');
+                console.log('Attempting to render SimpleEmployee component');
+                root.render(React.createElement(SimpleEmployee));
+                console.log('SimpleEmployee component rendered to root');
             } catch (employeeError) {
                 console.error('Error rendering Employee component:', employeeError);
                 // Try to use the inline fallback component if available
